@@ -1,8 +1,10 @@
 package collector
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -111,8 +113,16 @@ func (n oracleCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func execute(name string, c Collector, ch chan<- prometheus.Metric) {
+	dsn := os.Getenv("DATA_SOURCE_NAME")
+	db, err := sql.Open("goracle", dsn)
+	if err != nil {
+		log.Errorln("Error opening connection to database:", err)
+		return
+	}
+	defer db.Close()
+
 	begin := time.Now()
-	err := c.Update(ch)
+	err = c.Update(db, ch)
 	duration := time.Since(begin)
 	var success float64
 
@@ -129,5 +139,5 @@ func execute(name string, c Collector, ch chan<- prometheus.Metric) {
 
 // Collector is the interface a collector has to implement.
 type Collector interface {
-	Update(ch chan<- prometheus.Metric) error
+	Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }

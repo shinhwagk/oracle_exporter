@@ -10,7 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
-	// "github.com/shinhwagk/oracle_exporter/collector"
+
+	"github.com/shinhwagk/oracle_exporter/collector"
 )
 
 func init() {
@@ -38,10 +39,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gatherers := prometheus.Gatherers{
-		prometheus.DefaultGatherer,
-		registry,
-	}
+	gatherers := prometheus.Gatherers{prometheus.DefaultGatherer, registry}
+
 	// Delegate http serving to Prometheus client library, which will call collector.Collect.
 	h := promhttp.InstrumentMetricHandler(
 		registry,

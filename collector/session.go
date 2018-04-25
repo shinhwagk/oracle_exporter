@@ -2,8 +2,13 @@ package collector
 
 import (
 	"database/sql"
+	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
+)
+
+var (
+	sessionFlag = flag.Bool("collector.session", true, "for session activity collector")
 )
 
 type sessionCollector struct {
@@ -20,12 +25,11 @@ func NewSessionCollector() (Collector, error) {
 		"Gauge metric with count of sessions by status and type", []string{"status", "type"}, nil)}, nil
 }
 
-func (c *sessionCollector) Update(ch chan<- prometheus.Metric) error {
+func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	var (
 		rows *sql.Rows
 		err  error
 	)
-	db, err := sql.Open("mysql", "")
 	rows, err = db.Query("SELECT status, type, COUNT(*) FROM v$session GROUP BY status, type")
 	if err != nil {
 		return err
