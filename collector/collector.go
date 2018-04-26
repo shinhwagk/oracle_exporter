@@ -9,7 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const namespace = "oracle"
@@ -93,7 +93,7 @@ func NewOracleCollector(filters ...string) (*oracleCollector, error) {
 			}
 		}
 	}
-	return &oracleCollector{Collectors: collectors}, nil
+	return &oracleCollector{collectors}, nil
 }
 
 // Describe implements the prometheus.Collector interface.

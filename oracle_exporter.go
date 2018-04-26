@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"sort"
@@ -13,6 +12,8 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/shinhwagk/oracle_exporter/collector"
+
+	_ "gopkg.in/goracle.v2"
 )
 
 func init() {
@@ -60,7 +61,7 @@ func main() {
 		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 	)
 
-	log.AddFlags(flag.CommandLine)
+	log.AddFlags(kingpin.CommandLine)
 	kingpin.Version(version.Print("oracle_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
