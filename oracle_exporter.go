@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
+	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/shinhwagk/oracle_exporter/collector"
 )
@@ -55,12 +56,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	var (
-		listenAddress = flag.String("web.listen-address", ":9100", "Address on which to expose metrics and web interface.")
-		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9100").String()
+		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 	)
 
-	// log.AddFlags(flag.CommandLine)
-	flag.Parse()
+	log.AddFlags(flag.CommandLine)
+	kingpin.Version(version.Print("oracle_exporter"))
+	kingpin.HelpFlag.Short('h')
+	kingpin.Parse()
 
 	log.Infoln("Starting oracle_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
@@ -70,6 +73,7 @@ func main() {
 		log.Fatalf("Couldn't create collector: %s", err)
 	}
 
+	// print endable collectors with sort.
 	log.Infof("Enabled collectors:")
 	collectors := []string{}
 	for n := range nc.Collectors {

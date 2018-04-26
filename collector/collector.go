@@ -2,7 +2,6 @@ package collector
 
 import (
 	"database/sql"
-	"flag"
 	"fmt"
 	"os"
 	"sync"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 const namespace = "oracle"
@@ -17,15 +17,17 @@ const namespace = "oracle"
 var (
 	scrapeDurationDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "scrape", "collector_duration_seconds"),
-		"node_exporter: Duration of a collector scrape.",
-		[]string{"collector"},
-		nil,
+		"oracle_exporter: Duration of a collector scrape.",
+		[]string{"collector"}, nil,
 	)
 	scrapeSuccessDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "scrape", "collector_success"),
-		"node_exporter: Whether a collector succeeded.",
-		[]string{"collector"},
-		nil,
+		"oracle_exporter: Whether a collector succeeded.",
+		[]string{"collector"}, nil,
+	)
+	oracleUpDesc = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "up"),
+		"oracle_exporter: Whether the Oracle server is up.", nil, nil,
 	)
 )
 
@@ -53,8 +55,9 @@ func registerCollector(collector string, isDefaultEnabled bool, factory func() (
 
 	flagName := fmt.Sprintf("collector.%s", collector)
 	flagHelp := fmt.Sprintf("Enable the %s collector (default: %s).", collector, helpDefaultState)
+	defaultValue := fmt.Sprintf("%v", isDefaultEnabled)
 
-	flag := flag.Bool(flagName, isDefaultEnabled, flagHelp)
+	flag := kingpin.Flag(flagName, flagHelp).Default(defaultValue).Bool()
 	collectorState[collector] = flag
 
 	factories[collector] = factory
@@ -81,7 +84,7 @@ func NewOracleCollector(filters ...string) (*oracleCollector, error) {
 	collectors := make(map[string]Collector)
 	for key, enabled := range collectorState {
 		if *enabled {
-			collector, err := factories[key]()
+			collector, err := factories[key]() // get each collector desc
 			if err != nil {
 				return nil, err
 			}
@@ -97,33 +100,49 @@ func NewOracleCollector(filters ...string) (*oracleCollector, error) {
 func (n oracleCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- scrapeDurationDesc
 	ch <- scrapeSuccessDesc
+	ch <- oracleUpDesc
 }
 
 // Collect implements the prometheus.Collector interface.
 func (n oracleCollector) Collect(ch chan<- prometheus.Metric) {
+	begin := time.Now()
+	dsn := os.Getenv("DATA_SOURCE_NAME")
+	db, err := sql.Open("goracle", dsn)
+	if err != nil {
+		log.Errorln("Error opening connection to database:", err)
+		ch <- prometheus.MustNewConstMetric(oracleUpDesc, prometheus.GaugeValue, float64(0))
+		return
+	}
+	defer db.Close()
+
+	isUpRows, err := db.Query("SELECT * FROM dual")
+	if err != nil {
+		log.Errorln("Error pinging Pracle:", err)
+		ch <- prometheus.MustNewConstMetric(oracleUpDesc, prometheus.GaugeValue, float64(0))
+		return
+	}
+	isUpRows.Close()
+
+	ch <- prometheus.MustNewConstMetric(oracleUpDesc, prometheus.GaugeValue, float64(1))
+	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(begin).Seconds(), "connection")
+
 	wg := sync.WaitGroup{}
 	wg.Add(len(n.Collectors))
+
 	for name, c := range n.Collectors {
 		go func(name string, c Collector) {
-			execute(name, c, ch)
+			execute(db, name, c, ch)
 			wg.Done()
 		}(name, c)
 	}
 	wg.Wait()
 }
 
-func execute(name string, c Collector, ch chan<- prometheus.Metric) {
-	dsn := os.Getenv("DATA_SOURCE_NAME")
-	db, err := sql.Open("goracle", dsn)
-	if err != nil {
-		log.Errorln("Error opening connection to database:", err)
-		return
-	}
-	defer db.Close()
-
+func execute(db *sql.DB, name string, c Collector, ch chan<- prometheus.Metric) {
 	begin := time.Now()
-	err = c.Update(db, ch)
+	err := c.Update(db, ch)
 	duration := time.Since(begin)
+
 	var success float64
 
 	if err != nil {
@@ -133,7 +152,7 @@ func execute(name string, c Collector, ch chan<- prometheus.Metric) {
 		log.Debugf("OK: %s collector succeeded after %fs.", name, duration.Seconds())
 		success = 1
 	}
-	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, duration.Seconds(), name)
+	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(begin).Seconds(), name)
 	ch <- prometheus.MustNewConstMetric(scrapeSuccessDesc, prometheus.GaugeValue, success, name)
 }
 

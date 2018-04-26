@@ -26,22 +26,18 @@ func NewSessionCollector() (Collector, error) {
 }
 
 func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	var (
-		rows *sql.Rows
-		err  error
-	)
-	rows, err = db.Query("SELECT status, type, COUNT(*) FROM v$session GROUP BY status, type")
+	rows, err := db.Query("SELECT status, type, COUNT(*) FROM v$session GROUP BY status, type")
 	if err != nil {
 		return err
 	}
-
 	defer rows.Close()
+
 	for rows.Next() {
 		var (
 			status, sessionType string
 			count               float64
 		)
-		if err := rows.Scan(&status, &sessionType, &count); err != nil {
+		if err = rows.Scan(&status, &sessionType, &count); err != nil {
 			return err
 		}
 		ch <- prometheus.MustNewConstMetric(c.sessionActivity,
