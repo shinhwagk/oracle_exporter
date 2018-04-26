@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -126,16 +125,16 @@ func (n oracleCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(oracleUpDesc, prometheus.GaugeValue, float64(1))
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(begin).Seconds(), "connection")
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(n.Collectors))
+	// wg := sync.WaitGroup{}
+	// wg.Add(len(n.Collectors))
 
 	for name, c := range n.Collectors {
-		go func(name string, c Collector) {
+		func(name string, c Collector) {
 			execute(db, name, c, ch)
-			wg.Done()
+			// wg.Done()
 		}(name, c)
 	}
-	wg.Wait()
+	// wg.Wait()
 }
 
 func execute(db *sql.DB, name string, c Collector, ch chan<- prometheus.Metric) {
