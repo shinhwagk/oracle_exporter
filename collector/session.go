@@ -12,7 +12,7 @@ var (
 )
 
 type sessionCollector struct {
-	activity *prometheus.Desc
+	desc *prometheus.Desc
 }
 
 func init() {
@@ -41,7 +41,7 @@ func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 		if err = rows.Scan(&status, &sessionType, &count); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.activity, prometheus.GaugeValue, count, status, sessionType)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, count, status, sessionType)
 	}
 	return nil
 }

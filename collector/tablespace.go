@@ -12,9 +12,10 @@ var (
 )
 
 type tablespaceCollector struct {
-	tablespaceBytesDesc     *prometheus.Desc
-	tablespaceMaxBytesDesc  *prometheus.Desc
-	tablespaceFreeBytesDesc *prometheus.Desc
+	descs [3]*prometheus.Desc
+	// tablespaceBytesDesc     *prometheus.Desc
+	// tablespaceMaxBytesDesc  *prometheus.Desc
+	// tablespaceFreeBytesDesc *prometheus.Desc
 }
 
 func init() {
@@ -23,14 +24,12 @@ func init() {
 
 // NewTabalespaceCollector returns a new Collector exposing session activity statistics.
 func NewTabalespaceCollector() (Collector, error) {
-	return &tablespaceCollector{
-		prometheus.NewDesc(prometheus.BuildFQName(namespace, "tablespace", "bytes"),
-			"Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace", "type"}, nil),
-		prometheus.NewDesc(prometheus.BuildFQName(namespace, "tablespace", "max_bytes"),
-			"Generic counter metric of tablespaces max bytes in Oracle.", []string{"tablespace", "type"}, nil),
-		prometheus.NewDesc(prometheus.BuildFQName(namespace, "tablespace", "free"),
-			"Generic counter metric of tablespaces free bytes in Oracle.", []string{"tablespace", "type"}, nil),
-	}, nil
+	descs := [3]*prometheus.Desc{
+		newDesc("tablespace", "bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace", "type"}, nil),
+		newDesc("tablespace", "max_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace", "type"}, nil),
+		newDesc("tablespace", "free", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace", "type"}, nil),
+	}
+	return &tablespaceCollector{descs}, nil
 }
 
 func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
@@ -47,9 +46,10 @@ func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 		if err := rows.Scan(&tablespaceName, &status, &contents, &extentManagement, &bytes, &maxBytes, &bytesFree); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.tablespaceBytesDesc, prometheus.GaugeValue, float64(bytes), tablespaceName, contents)
-		ch <- prometheus.MustNewConstMetric(c.tablespaceMaxBytesDesc, prometheus.GaugeValue, float64(maxBytes), tablespaceName, contents)
-		ch <- prometheus.MustNewConstMetric(c.tablespaceFreeBytesDesc, prometheus.GaugeValue, float64(bytesFree), tablespaceName, contents)
+
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, float64(bytes), tablespaceName, contents)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, float64(maxBytes), tablespaceName, contents)
+		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.GaugeValue, float64(bytesFree), tablespaceName, contents)
 	}
 	return nil
 }
