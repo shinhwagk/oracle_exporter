@@ -69,5 +69,6 @@ FROM
   FROM v$sesstat ss, v$statname sn, v$session s
   WHERE s.sid       = ss.SID
   AND ss.STATISTIC# = sn.STATISTIC#
-  AND sn.name      IN ('parse count (total)', 'execute count', 'user commits', 'user rollbacks')
+	AND sn.name      IN ('parse count (total)', 'execute count', 'user commits', 'user rollbacks')
+	AND s.USERNAME is not null
   GROUP BY s.USERNAME, sn.NAME)`
