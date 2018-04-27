@@ -13,7 +13,7 @@ var (
 	// sysstatFlag = flag.Bool("collector.sysstat", true, "for session activity collector")
 )
 
-type systatCollector struct {
+type sysstatCollector struct {
 	descs map[string]*prometheus.Desc
 }
 
@@ -34,10 +34,10 @@ func NewSysstatCollector() (Collector, error) {
 	descs["rollback_total"] = newDesc("sysstat", "rollback_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["execute_total"] = newDesc("sysstat", "execute_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["parse_total"] = newDesc("sysstat", "parse_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
-	return &systatCollector{descs}, nil
+	return &sysstatCollector{descs}, nil
 }
 
-func (c *systatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
+func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	rows, err := db.Query(*sysstatSQL)
 	if err != nil {
 		return err
