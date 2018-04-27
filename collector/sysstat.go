@@ -3,14 +3,13 @@ package collector
 import (
 	"database/sql"
 	"errors"
+	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 )
 
 var (
-	sysstatSQL *string
-	// sysstatFlag = flag.Bool("collector.sysstat", true, "for session activity collector")
+	sysstatFlag = flag.Bool("collector.sysstat", true, "for session activity collector")
 )
 
 type sysstatCollector struct {
@@ -18,13 +17,7 @@ type sysstatCollector struct {
 }
 
 func init() {
-	s, err := readFile("sysstat.sql")
-	sysstatSQL = s
-	if err != nil {
-		log.Errorln("Error opening sql file sysstat.sql:", err)
-	} else {
-		registerCollector("sysstat", defaultEnabled, NewSessionCollector)
-	}
+	registerCollector("sysstat", defaultEnabled, NewSessionCollector)
 }
 
 // NewSysstatCollector returns a new Collector exposing session activity statistics.
@@ -38,7 +31,7 @@ func NewSysstatCollector() (Collector, error) {
 }
 
 func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(*sysstatSQL)
+	rows, err := db.Query(sysstatSQL)
 	if err != nil {
 		return err
 	}
@@ -60,3 +53,15 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 	}
 	return nil
 }
+
+const sysstatSQL = `
+SELECT
+  CASE name
+    WHEN 'parse count (total)' THEN 'parse_total'
+    WHEN 'execute count'       THEN 'execute_total'
+    WHEN 'user commits'        THEN 'commit_total'
+    WHEN 'user rollbacks'      THEN 'rollback_total'
+  END name,
+  value
+FROM v$sysstat
+WHERE name IN ('parse count (total)', 'execute count', 'user commits', 'user rollbacks')`

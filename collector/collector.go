@@ -3,7 +3,6 @@ package collector
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -161,14 +160,14 @@ type Collector interface {
 	Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
 
-func readFile(f string) (*string, error) {
-	bs, err := ioutil.ReadFile(f)
-	if err != nil {
-		return nil, err
-	}
-	sql := string(bs)
-	return &sql, nil
-}
+// func readFile(f string) (*string, error) {
+// 	bs, err := ioutil.ReadFile(f)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	s := string(bs)
+// 	return &s, nil
+// }
 
 func newDesc(subsystem string, name string, help string, vls []string, cls prometheus.Labels) *prometheus.Desc {
 	return prometheus.NewDesc(prometheus.BuildFQName(namespace, subsystem, name), help, vls, cls)

@@ -5,11 +5,9 @@ import (
 	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 )
 
 var (
-	sessionSQL  *string
 	sessionFlag = flag.Bool("collector.session", true, "for session activity collector")
 )
 
@@ -18,13 +16,7 @@ type sessionCollector struct {
 }
 
 func init() {
-	s, err := readFile("session.sql")
-	sessionSQL = s
-	if err != nil {
-		log.Errorln("Error opening sql file session.sql:", err)
-	} else {
-		registerCollector("session", defaultEnabled, NewSessionCollector)
-	}
+	registerCollector("session", defaultEnabled, NewSessionCollector)
 }
 
 // NewSessionCollector returns a new Collector exposing session activity statistics.
@@ -35,7 +27,7 @@ func NewSessionCollector() (Collector, error) {
 }
 
 func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(*sessionSQL)
+	rows, err := db.Query(sessionSQL)
 	if err != nil {
 		return err
 	}
@@ -53,3 +45,5 @@ func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 	}
 	return nil
 }
+
+const sessionSQL = "SELECT status, type, COUNT(*) FROM v$session GROUP BY status, type"
