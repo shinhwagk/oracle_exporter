@@ -1,0 +1,1 @@
+SELECT status, type, COUNT(*) FROM v$session GROUP BY status, type

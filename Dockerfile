@@ -20,7 +20,4 @@ ENV GOBIN /go/bin
 
 WORKDIR /opt
 
-RUN go get
-RUN go build -o oracle_exporter
-
-CMD ./oracle_exporter
+CMD go get && go build -o oracle_exporter && ./oracle_exporter
