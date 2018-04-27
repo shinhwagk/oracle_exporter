@@ -5,11 +5,9 @@ import (
 	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 )
 
 var (
-	tablespaceSQL  *string
 	tablespaceFlag = flag.Bool("collector.tablespace", true, "for tablespace space collector")
 )
 
@@ -20,13 +18,7 @@ type tablespaceCollector struct {
 }
 
 func init() {
-	s, err := readFile("tablespace.sql")
-	tablespaceSQL = s
-	if err != nil {
-		log.Errorln("Error opening sql file tablespace.sql:", err)
-	} else {
-		registerCollector("tablespace", defaultEnabled, NewTabalespaceCollector)
-	}
+	registerCollector("tablespace", defaultEnabled, NewTabalespaceCollector)
 }
 
 // NewTabalespaceCollector returns a new Collector exposing session activity statistics.
@@ -42,7 +34,7 @@ func NewTabalespaceCollector() (Collector, error) {
 }
 
 func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(*tablespaceSQL)
+	rows, err := db.Query(tablespaceSQL)
 	if err != nil {
 		return err
 	}
