@@ -29,7 +29,7 @@ func NewTableCollector() (Collector, error) {
 func (c *tableCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	rows, err := db.Query(`SELECT owner, segment_name, SUM(bytes) bytes
 	FROM dba_segments
-	WHERE owner NOT IN ('SYS', 'SYSTEM', 'WMSYS', 'DBSNMP', 'TSMSYS')
+	WHERE owner NOT IN ('SYS', 'SYSTEM', 'WMSYS', 'DBSNMP', 'TSMSYS', 'SYSMAN', 'OLAPSYS', 'EXFSYS', 'CTXSYS')
 		AND segment_type IN ('TABLE', 'TABLE PARTITION')
 	GROUP BY owner, segment_name`)
 
