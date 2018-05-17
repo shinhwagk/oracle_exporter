@@ -15,21 +15,17 @@ ADD src/golang.org /go/src/golang.org
 ADD src/gopkg.in /go/src/gopkg.in
 
 ADD oracle_exporter.go /opt/oracle_exporter.go
+ADD entrypoint.sh      /opt/entrypoint.sh
 
 ENV GOBIN /go/bin
 
 WORKDIR /opt
 
-# RUN go get
-# RUN go build -o oracle_exporter
 RUN go get github.com/prometheus/client_golang/prometheus
 RUN go get github.com/prometheus/client_golang/prometheus/promhttp
 RUN go get github.com/prometheus/common/log
 RUN go get github.com/prometheus/common/version
 RUN go get gopkg.in/alecthomas/kingpin.v2
 RUN go get gopkg.in/goracle.v2
-RUN go get github.com/shinhwagk/oracle_exporter/collector
 
-RUN go build -o oracle_exporter
-
-CMD ./oracle_exporter
+ENTRYPOINT [ "entrypoint.sh" ]

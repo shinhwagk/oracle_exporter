@@ -2,7 +2,6 @@ package collector
 
 import (
 	"database/sql"
-	"errors"
 	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,7 +12,7 @@ var (
 )
 
 type tableCollector struct {
-	descs map[string]*prometheus.Desc
+	desc *prometheus.Desc
 }
 
 func init() {
@@ -22,9 +21,9 @@ func init() {
 
 // NewTableCollector returns a new Collector exposing session activity statistics.
 func NewTableCollector() (Collector, error) {
-	descs := make(map[string]*prometheus.Desc)
-	descs["bytes_total"] = newDesc("table", "bytes_total", "Generic counter metric from v$sysstat view in Oracle.", []string{"owner", "table_name"}, nil)
-	return &tableCollector{descs}, nil
+	return &tableCollector{
+		newDesc("table", "bytes_total", "Generic counter metric from v$sysstat view in Oracle.", []string{"owner", "table_name"}, nil),
+	}, nil
 }
 
 func (c *tableCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
@@ -47,12 +46,7 @@ func (c *tableCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 			return err
 		}
 
-		desc, ok := c.descs[name]
-		if ok {
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, bytes, owner, name)
-		} else {
-			return errors.New("table desc no exist")
-		}
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, bytes, owner, name)
 	}
 	return nil
 }
