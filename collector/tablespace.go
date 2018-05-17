@@ -72,14 +72,8 @@ FROM
       ddf.status                AS status,
       ddf.bytes                 AS bytes,
       SUM(dfs.bytes)            AS free_bytes,
-      CASE
-        WHEN ddf.maxbytes = 0
-        THEN ddf.bytes
-        ELSE ddf.maxbytes
-      END AS max_bytes
-    FROM dba_data_files ddf,
-      dba_tablespaces dt,
-      dba_free_space dfs
+      DECODE(ddf.maxbytes, 0, ddf.bytes, ddf.maxbytes) AS max_bytes
+    FROM dba_data_files ddf, dba_tablespaces dt, dba_free_space dfs
     WHERE ddf.tablespace_name = dt.tablespace_name
     AND ddf.file_id           = dfs.file_id(+)
     GROUP BY ddf.tablespace_name,

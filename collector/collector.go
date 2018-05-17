@@ -125,16 +125,11 @@ func (n oracleCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(oracleUpDesc, prometheus.GaugeValue, float64(1))
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(begin).Seconds(), "connection")
 
-	// wg := sync.WaitGroup{}
-	// wg.Add(len(n.Collectors))
-
 	for name, c := range n.Collectors {
 		func(name string, c Collector) {
 			execute(db, name, c, ch)
-			// wg.Done()
 		}(name, c)
 	}
-	// wg.Wait()
 }
 
 func execute(db *sql.DB, name string, c Collector, ch chan<- prometheus.Metric) {
@@ -159,15 +154,6 @@ func execute(db *sql.DB, name string, c Collector, ch chan<- prometheus.Metric) 
 type Collector interface {
 	Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
-
-// func readFile(f string) (*string, error) {
-// 	bs, err := ioutil.ReadFile(f)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	s := string(bs)
-// 	return &s, nil
-// }
 
 func newDesc(subsystem string, name string, help string, vls []string, cls prometheus.Labels) *prometheus.Desc {
 	return prometheus.NewDesc(prometheus.BuildFQName(namespace, subsystem, name), help, vls, cls)
