@@ -76,7 +76,6 @@ SELECT *
                s.EXECUTIONS,
                vash.sample_time,
                S.BUFFER_GETS,
-               s.LAST_ACTIVE_TIME,
                du.username,
                S.DISK_READS
           from v$sqlstats s, vash vash, dba_users du
