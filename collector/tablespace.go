@@ -47,9 +47,9 @@ func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, float64(bytes), tablespaceName, contents)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, float64(maxBytes), tablespaceName, contents)
-		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.GaugeValue, float64(bytesFree), tablespaceName, contents)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, bytes, tablespaceName, contents)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, maxBytes, tablespaceName, contents)
+		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.GaugeValue, bytesFree, tablespaceName, contents)
 	}
 	return nil
 }
