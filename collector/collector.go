@@ -14,25 +14,14 @@ import (
 const namespace = "oracle"
 
 var (
-	scrapeDurationDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "scrape", "collector_duration_seconds"),
-		"oracle_exporter: Duration of a collector scrape.",
-		[]string{"collector"}, nil,
-	)
-	scrapeSuccessDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "scrape", "collector_success"),
-		"oracle_exporter: Whether a collector succeeded.",
-		[]string{"collector"}, nil,
-	)
-	oracleUpDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "", "up"),
-		"oracle_exporter: Whether the Oracle server is up.", nil, nil,
-	)
+	scrapeDurationDesc = newDesc("scrape", "collector_duration_seconds", "oracle_exporter: Duration of a collector scrape.", []string{"collector"}, nil)
+	scrapeSuccessDesc  = newDesc("scrape", "collector_success", "oracle_exporter: Whether a collector succeeded.", []string{"collector"}, nil)
+	oracleUpDesc       = newDesc("", "up", "oracle_exporter: Whether the Oracle server is up.", nil, nil)
 )
 
-func warnDeprecated(collector string) {
-	log.Warnf("The %s collector is deprecated and will be removed in the future!", collector)
-}
+// func warnDeprecated(collector string) {
+// 	log.Warnf("The %s collector is deprecated and will be removed in the future!", collector)
+// }
 
 const (
 	defaultEnabled  = true
