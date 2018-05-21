@@ -26,7 +26,6 @@ func NewSysstatCollector() (Collector, error) {
 	descs["redo_total"] = newDesc("sysstat", "redo_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["useralls_total"] = newDesc("sysstat", "useralls_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["dbblockchanges_total"] = newDesc("sysstat", "dbblockchanges_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
-	descs["parse_total"] = newDesc("sysstat", "parse_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["parsehard_total"] = newDesc("sysstat", "parsehard_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["physicalreads_total"] = newDesc("sysstat", "physicalreads_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["physicalwrites_total"] = newDesc("sysstat", "physicalwrites_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
