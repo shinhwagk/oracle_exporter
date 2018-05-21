@@ -55,8 +55,9 @@ SELECT
     WHEN 'parse count (total)' THEN 'parse_total'
     WHEN 'execute count'       THEN 'execute_total'
     WHEN 'user commits'        THEN 'commit_total'
-    WHEN 'user rollbacks'      THEN 'rollback_total'
+		WHEN 'user rollbacks'      THEN 'rollback_total'
+		WHEN 'DB time'             THEN 'dbtime_total'
   END name,
   value
 FROM v$sysstat
-WHERE name IN ('parse count (total)', 'execute count', 'user commits', 'user rollbacks')`
+WHERE name IN ('parse count (total)', 'execute count', 'user commits', 'user rollbacks', 'DB time')`
