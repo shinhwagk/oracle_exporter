@@ -2,13 +2,8 @@ package collector
 
 import (
 	"database/sql"
-	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
-)
-
-var (
-	sessionFlag = flag.Bool("collector.session", true, "for session activity collector")
 )
 
 type sessionCollector struct {

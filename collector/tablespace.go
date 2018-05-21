@@ -2,20 +2,12 @@ package collector
 
 import (
 	"database/sql"
-	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var (
-	tablespaceFlag = flag.Bool("collector.tablespace", true, "for tablespace space collector")
-)
-
 type tablespaceCollector struct {
 	descs [3]*prometheus.Desc
-	// tablespaceBytesDesc     *prometheus.Desc
-	// tablespaceMaxBytesDesc  *prometheus.Desc
-	// tablespaceFreeBytesDesc *prometheus.Desc
 }
 
 func init() {

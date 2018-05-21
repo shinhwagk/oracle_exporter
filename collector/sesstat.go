@@ -3,13 +3,8 @@ package collector
 import (
 	"database/sql"
 	"errors"
-	"flag"
 
 	"github.com/prometheus/client_golang/prometheus"
-)
-
-var (
-	sessstatFlag = flag.Bool("collector.sesstat", true, "for session activity collector")
 )
 
 type sesstatCollector struct {
