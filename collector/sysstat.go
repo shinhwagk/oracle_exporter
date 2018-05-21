@@ -22,6 +22,7 @@ func NewSysstatCollector() (Collector, error) {
 	descs["rollback_total"] = newDesc("sysstat", "rollback_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["execute_total"] = newDesc("sysstat", "execute_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["parse_total"] = newDesc("sysstat", "parse_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
+	descs["dbtime_total"] = newDesc("sysstat", "dbtime_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	return &sysstatCollector{descs}, nil
 }
 
@@ -52,9 +53,9 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 const sysstatSQL = `
 SELECT
   CASE name
-    WHEN 'parse count (total)' THEN 'parse_total'
-    WHEN 'execute count'       THEN 'execute_total'
-    WHEN 'user commits'        THEN 'commit_total'
+		WHEN 'parse count (total)' THEN 'parse_total'
+		WHEN 'execute count'       THEN 'execute_total'
+		WHEN 'user commits'        THEN 'commit_total'
 		WHEN 'user rollbacks'      THEN 'rollback_total'
 		WHEN 'DB time'             THEN 'dbtime_total'
   END name,
