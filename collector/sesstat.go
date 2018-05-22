@@ -36,7 +36,7 @@ func (c *sesstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 	for rows.Next() {
 		var name, username string
 		var value float64
-		if err := rows.Scan(&username, &name, &value); err != nil {
+		if err := rows.Scan(&name, &username, &value); err != nil {
 			return err
 		}
 
@@ -63,8 +63,8 @@ SELECT CASE sn.NAME
          WHEN 'DB time' THEN
           'dbtime_total'
        END name,
-       SUM(ss.VALUE) value,
-       s.USERNAME
+			 s.USERNAME,
+			 SUM(ss.VALUE) value
   FROM v$sesstat ss, v$statname sn, v$session s
  WHERE s.sid = ss.SID
    AND ss.STATISTIC# = sn.STATISTIC#
