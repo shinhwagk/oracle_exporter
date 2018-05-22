@@ -50,22 +50,28 @@ func (c *sesstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
 
 const sesstatSQL = `
-SELECT
-	USERNAME,
-  CASE NAME
-    WHEN 'parse count (total)' THEN 'parse_total'
-    WHEN 'execute count'       THEN 'execute_total'
-    WHEN 'user commits'        THEN 'commit_total'
-		WHEN 'user rollbacks'      THEN 'rollback_total'
-		WHEN 'DB time'             THEN 'dbtime_total'
-  END name,
-  VALUE
-FROM
-  (SELECT sn.NAME, SUM(ss.VALUE) value, s.USERNAME
+SELECT CASE sn.NAME
+         WHEN 'parse count (total)' THEN
+          'parse_total'
+         WHEN 'execute count' THEN
+          'execute_total'
+         WHEN 'user commits' THEN
+          'commit_total'
+         WHEN 'user rollbacks' THEN
+          'rollback_total'
+         WHEN 'DB time' THEN
+          'dbtime_total'
+       END name,
+       SUM(ss.VALUE) value,
+       s.USERNAME
   FROM v$sesstat ss, v$statname sn, v$session s
-  WHERE s.sid       = ss.SID
-  AND ss.STATISTIC# = sn.STATISTIC#
-	AND sn.name      IN ('parse count (total)', 'execute count', 'user commits', 'user rollbacks', 'DB time')
-	AND s.USERNAME is not null
-	AND s.type = 'USER'
-  GROUP BY s.USERNAME, sn.NAME)`
+ WHERE s.sid = ss.SID
+   AND ss.STATISTIC# = sn.STATISTIC#
+   AND sn.name IN ('parse count (total)',
+                   'execute count',
+                   'user commits',
+                   'user rollbacks',
+                   'DB time')
+   AND s.USERNAME is not null
+   AND s.type = 'USER'
+ GROUP BY s.USERNAME, sn.NAME`
