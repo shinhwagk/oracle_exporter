@@ -31,6 +31,8 @@ func NewSysstatCollector() (Collector, error) {
 	descs["physicalwrites_total"] = newDesc("sysstat", "physicalwrites_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["logons_total"] = newDesc("sysstat", "logons_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	descs["logicalreads_total"] = newDesc("sysstat", "logicalreads_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
+	descs["logicalwrite_bytes_total"] = newDesc("sysstat", "logicalwrite_bytes_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
+	descs["logicalread_bytes_total"] = newDesc("sysstat", "logicalread_bytes_total", "Generic counter metric from v$sysstat view in Oracle.", nil, nil)
 	return &sysstatCollector{descs}, nil
 }
 
@@ -87,7 +89,11 @@ SELECT CASE name
          WHEN 'logons cumulative' THEN
 					'logons_total'
 				 WHEN 'session logical reads' THEN
-          'logicalreads_total'
+					'logicalreads_total'
+				 WHEN 'physical write total bytes' THEN
+					'logicalwrite_bytes_total'
+				 WHEN 'physical read total bytes' THEN
+          'logicalread_bytes_total'					
        END name,
        value
   FROM v$sysstat
@@ -104,4 +110,6 @@ SELECT CASE name
                 'physical reads',
                 'physical writes',
 								'logons cumulative',
-								'session logical reads')`
+								'session logical reads',
+								'physical write total bytes',
+								'physical read total bytes')`
