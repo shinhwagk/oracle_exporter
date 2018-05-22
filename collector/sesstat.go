@@ -22,6 +22,7 @@ func NewSesstatCollector() (Collector, error) {
 	descs["rollback_total"] = newDesc("sesstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
 	descs["execute_total"] = newDesc("sesstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
 	descs["parse_total"] = newDesc("sesstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
+	descs["dbtime_total"] = newDesc("sesstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
 	return &sesstatCollector{descs}, nil
 }
 
