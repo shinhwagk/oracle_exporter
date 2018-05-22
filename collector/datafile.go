@@ -17,16 +17,16 @@ func init() {
 // NewDatafileCollector returns a new Collector exposing session activity statistics.
 func NewDatafileCollector() (Collector, error) {
 	descs := [4]*prometheus.Desc{
-		newDesc("datafile", "small_read_megabytes", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
-		newDesc("datafile", "small_write_megabytes", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
-		newDesc("datafile", "large_read_megabytes", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
-		newDesc("datafile", "large_write_megabytes", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
+		newDesc("datafile", "small_read_megabytes_total", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
+		newDesc("datafile", "small_write_megabytes_total", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
+		newDesc("datafile", "large_read_megabytes_total", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
+		newDesc("datafile", "large_write_megabytes_total", "Generic counter metric from v$iostat_file view in Oracle.", []string{"tablespace"}, nil),
 	}
 	return &datafileCollector{descs}, nil
 }
 
 func (c *datafileCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(sesstatSQL)
+	rows, err := db.Query(datafileSQL)
 	if err != nil {
 		return err
 	}
