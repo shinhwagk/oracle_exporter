@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:345",
+        "$$hashKey": "object:6894",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -18,7 +18,7 @@
   "gnetId": 3333,
   "graphTooltip": 1,
   "id": 2,
-  "iteration": 1526956018668,
+  "iteration": 1526958696573,
   "links": [
     {
       "asDropdown": false,
@@ -49,6 +49,7 @@
       "repeat": "db_name",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -115,6 +116,7 @@
       ],
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -219,6 +221,7 @@
       ],
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -312,6 +315,7 @@
       ],
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -406,6 +410,7 @@
       "repeat": null,
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -480,6 +485,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -576,6 +582,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -666,6 +673,7 @@
       "links": [],
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -739,6 +747,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -755,7 +764,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[5m])",
+          "expr": "idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 2,
@@ -763,7 +772,7 @@
           "refId": "A"
         },
         {
-          "expr": "idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[5m])",
+          "expr": "idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 2,
@@ -774,7 +783,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Commit & Rollback Per 10 Min",
+      "title": "Commit & Rollback Per 1 Min",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -817,13 +826,14 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 50
       },
       "id": 89,
       "panels": [],
       "repeat": "db_name",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -840,10 +850,240 @@
       "datasource": "p",
       "fill": 1,
       "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 51
+      },
+      "id": 91,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "scopedVars": {
+        "db_name": {
+          "$$hashKey": "object:7003",
+          "selected": true,
+          "text": "whlt",
+          "value": "whlt"
+        }
+      },
+      "seriesOverrides": [
+        {
+          "alias": "write bytes",
+          "color": "#bf1b00",
+          "transform": "negative-Y"
+        },
+        {
+          "alias": "read bytes",
+          "color": "#65c5db"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "$$hashKey": "object:7073",
+          "expr": "idelta(oracle_sysstat_logicalwrite_bytes_total{db_name=\"$db_name\"}[2m])",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 1,
+          "legendFormat": "write bytes",
+          "refId": "B"
+        },
+        {
+          "$$hashKey": "object:7074",
+          "expr": "idelta(oracle_sysstat_logicalread_bytes_total{db_name=\"$db_name\"}[2m])",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 1,
+          "legendFormat": "read bytes",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Read/Write Bytes Total / 1 min",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:7123",
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:7124",
+          "format": "bytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "p",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 51
+      },
+      "id": 92,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "scopedVars": {
+        "db_name": {
+          "$$hashKey": "object:7003",
+          "selected": true,
+          "text": "whlt",
+          "value": "whlt"
+        }
+      },
+      "seriesOverrides": [
+        {
+          "alias": "write bytes / per transaction",
+          "color": "#bf1b00",
+          "transform": "negative-Y"
+        },
+        {
+          "alias": "read bytes / per transaction",
+          "color": "#6ed0e0"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "idelta(oracle_sysstat_logicalread_bytes_total{db_name=\"$db_name\"}[2m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 1,
+          "legendFormat": "read bytes / per transaction",
+          "refId": "C"
+        },
+        {
+          "expr": "idelta(oracle_sysstat_logicalwrite_bytes_total{db_name=\"$db_name\"}[2m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 1,
+          "legendFormat": "write bytes / per transaction",
+          "refId": "D"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Read/Write total / 1 min / per transaction",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "$$hashKey": "object:7170",
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "$$hashKey": "object:7171",
+          "format": "bytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "p",
+      "fill": 1,
+      "gridPos": {
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 26
+        "y": 58
       },
       "id": 80,
       "legend": {
@@ -865,6 +1105,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -954,7 +1195,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 26
+        "y": 58
       },
       "id": 82,
       "legend": {
@@ -976,6 +1217,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -992,7 +1234,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:455",
           "expr": "idelta(oracle_sysstat_logicalreads_total{db_name=\"$db_name\"}[3m])",
           "format": "time_series",
           "interval": "1m",
@@ -1001,7 +1242,6 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:456",
           "expr": "idelta(oracle_sysstat_logicalreads_total{db_name=\"$db_name\"}[3m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
           "interval": "1m",
@@ -1062,7 +1302,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 26
+        "y": 58
       },
       "id": 85,
       "legend": {
@@ -1084,6 +1324,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1091,7 +1332,6 @@
       },
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1364",
           "alias": "per transaction",
           "yaxis": 2
         }
@@ -1101,7 +1341,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:531",
           "expr": "idelta(oracle_sysstat_useralls_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
@@ -1110,7 +1349,6 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:553",
           "expr": "idelta(oracle_sysstat_useralls_total{db_name=\"$db_name\"}[2m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
           "interval": "1m",
@@ -1170,7 +1408,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 26
+        "y": 58
       },
       "id": 83,
       "legend": {
@@ -1192,6 +1430,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1199,7 +1438,6 @@
       },
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1507",
           "alias": "per tramsactopm",
           "yaxis": 2
         }
@@ -1209,7 +1447,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:611",
+          "$$hashKey": "object:7262",
           "expr": "idelta(oracle_sysstat_parse_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
@@ -1218,9 +1456,10 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:633",
+          "$$hashKey": "object:7263",
           "expr": "idelta(oracle_sysstat_parse_total{db_name=\"$db_name\"}[2m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "per tramsactopm",
           "refId": "B"
@@ -1278,7 +1517,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 31
+        "y": 63
       },
       "id": 81,
       "legend": {
@@ -1300,6 +1539,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1307,7 +1547,6 @@
       },
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1626",
           "alias": "per transaction",
           "yaxis": 2
         }
@@ -1317,7 +1556,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:821",
           "expr": "idelta(oracle_sysstat_dbblockchanges_total{db_name=\"$db_name\"}[3m])",
           "format": "time_series",
           "instant": false,
@@ -1327,9 +1565,9 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:843",
           "expr": "idelta(oracle_sysstat_dbblockchanges_total{db_name=\"$db_name\"}[3m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "per transaction",
           "refId": "B"
@@ -1387,7 +1625,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 31
+        "y": 63
       },
       "id": 87,
       "legend": {
@@ -1409,6 +1647,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1416,7 +1655,6 @@
       },
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1745",
           "alias": "per tramsactopm",
           "yaxis": 2
         }
@@ -1426,7 +1664,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:1031",
           "expr": "idelta(oracle_sysstat_physicalwrites_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
@@ -1435,9 +1672,9 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:1053",
           "expr": "idelta(oracle_sysstat_physicalwrites_total{db_name=\"$db_name\"}[2m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "per tramsactopm",
           "refId": "B"
@@ -1494,7 +1731,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 31
+        "y": 63
       },
       "id": 86,
       "legend": {
@@ -1516,6 +1753,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1523,7 +1761,6 @@
       },
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1924",
           "alias": "per transaction",
           "yaxis": 2
         }
@@ -1533,7 +1770,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:1107",
           "expr": "idelta(oracle_sysstat_physicalreads_total{db_name=\"$db_name\"}[3m])",
           "format": "time_series",
           "interval": "1m",
@@ -1542,9 +1778,9 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:1129",
           "expr": "idelta(oracle_sysstat_physicalreads_total{db_name=\"$db_name\"}[3m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "per transaction",
           "refId": "B"
@@ -1601,7 +1837,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 31
+        "y": 63
       },
       "id": 84,
       "legend": {
@@ -1623,6 +1859,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:7003",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1630,7 +1867,6 @@
       },
       "seriesOverrides": [
         {
-          "$$hashKey": "object:2170",
           "alias": "per transaction",
           "yaxis": 2
         }
@@ -1640,7 +1876,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:1183",
           "expr": "idelta(oracle_sysstat_parsehard_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
@@ -1649,9 +1884,9 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:1205",
           "expr": "idelta(oracle_sysstat_parsehard_total{db_name=\"$db_name\"}[2m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "per transaction",
           "refId": "B"
@@ -1698,283 +1933,282 @@
       }
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 136
       },
       "id": 65,
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "p",
-          "fill": 1,
-          "gridPos": {
-            "h": 9,
-            "w": 12,
-            "x": 0,
-            "y": 26
-          },
-          "id": 67,
-          "legend": {
-            "alignAsTable": true,
-            "avg": false,
-            "current": true,
-            "max": false,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "oracle_tablespace_free{db_name=\"$db_name\"}",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{tablespace}}",
-              "refId": "A"
-            },
-            {
-              "expr": "",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "refId": "B"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Tablespace Free",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "decbytes",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "p",
-          "fill": 1,
-          "gridPos": {
-            "h": 9,
-            "w": 12,
-            "x": 12,
-            "y": 26
-          },
-          "id": 68,
-          "legend": {
-            "alignAsTable": true,
-            "avg": false,
-            "current": true,
-            "max": false,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "oracle_tablespace_bytes{db_name=\"$db_name\"}",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{tablespace}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Tablespace Used",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "decbytes",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": null,
-          "fill": 1,
-          "gridPos": {
-            "h": 9,
-            "w": 12,
-            "x": 0,
-            "y": 35
-          },
-          "id": 70,
-          "legend": {
-            "alignAsTable": true,
-            "avg": false,
-            "current": true,
-            "max": false,
-            "min": false,
-            "rightSide": true,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "increase(oracle_tablespace_bytes{db_name=\"$db_name\"}[1h])",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "{{tablespace}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "tablespace increase",
-          "tooltip": {
-            "shared": true,
-            "sort": 0,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "decbytes",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "yaxis": {
-            "align": false,
-            "alignLevel": null
-          }
-        }
-      ],
+      "panels": [],
       "repeat": null,
       "title": "Tablespace statistics",
       "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "p",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 137
+      },
+      "id": 67,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "oracle_tablespace_free{db_name=\"$db_name\"}",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{tablespace}}",
+          "refId": "A"
+        },
+        {
+          "expr": "",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Tablespace Free",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "p",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 137
+      },
+      "id": 68,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "oracle_tablespace_bytes{db_name=\"$db_name\"}",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{tablespace}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Tablespace Used",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 146
+      },
+      "id": 70,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "increase(oracle_tablespace_bytes{db_name=\"$db_name\"}[1h])",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{tablespace}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "tablespace increase",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
   "refresh": "1m",
@@ -1989,6 +2223,7 @@
         "allFormat": "glob",
         "allValue": null,
         "current": {
+          "tags": [],
           "text": "whlt",
           "value": "whlt"
         },
@@ -2140,5 +2375,5 @@
   "timezone": "browser",
   "title": "oracle",
   "uid": "3Nw8I1Wmz",
-  "version": 80
+  "version": 92
 }
