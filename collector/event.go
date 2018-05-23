@@ -32,14 +32,15 @@ func (c *eventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 
 	for rows.Next() {
 		var name string
-		var value float64
-		if err := rows.Scan(&name, &value); err != nil {
+		var waits, time_waited float64
+		if err := rows.Scan(&name, &waits, &time_waited); err != nil {
 			return err
 		}
 
 		desc, ok := c.descs[name]
 		if ok {
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, value, name)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, waits, name)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, time_waited, name)
 		} else {
 			return errors.New("event desc no exist")
 		}
