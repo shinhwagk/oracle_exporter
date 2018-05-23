@@ -63,13 +63,9 @@ select sql_id,
        buffer_gets,
        PARSING_SCHEMA_NAME,
        DISK_READS
-  from v$sqlarea
- where last_active_time >= trunc(sysdate, 'MI') - 1 / 24 / 60
-   and PARSING_SCHEMA_ID in
-       (select ASH.user_id
-          from V$ACTIVE_SESSION_HISTORY ASH, DBA_USERS du
-         where ASH.sample_time >= trunc(sysdate, 'MI') - 1 / 24 / 60
-           AND ash.user_id = du.user_id
-           and du.username not in ('SYS', 'SYSTEM')
-         GROUP BY ASH.USER_ID)
-`
+			 FROM v$sqlarea
+			 WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60
+				 AND PARSING_SCHEMA_ID IN
+						 (SELECT user_id
+								FROM DBA_USERS du
+							 WHERE du.username NOT IN ('SYS', 'SYSTEM'))`

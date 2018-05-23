@@ -18,11 +18,11 @@ func init() {
 // NewSesstatCollector returns a new Collector exposing session activity statistics.
 func NewSesstatCollector() (Collector, error) {
 	descs := make(map[string]*prometheus.Desc)
-	descs["commit_total"] = newDesc("sesstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
-	descs["rollback_total"] = newDesc("sesstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
-	descs["execute_total"] = newDesc("sesstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
-	descs["parse_total"] = newDesc("sesstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
-	descs["dbtime_total"] = newDesc("sesstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
+	descs["user commits"] = newDesc("sesstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
+	descs["user rollbacks"] = newDesc("sesstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
+	descs["execute count"] = newDesc("sesstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
+	descs["parse count (total)"] = newDesc("sesstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
+	descs["DB time"] = newDesc("sesstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username"}, nil)
 	return &sesstatCollector{descs}, nil
 }
 
@@ -51,18 +51,7 @@ func (c *sesstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
 
 const sesstatSQL = `
-SELECT CASE sn.NAME
-         WHEN 'parse count (total)' THEN
-          'parse_total'
-         WHEN 'execute count' THEN
-          'execute_total'
-         WHEN 'user commits' THEN
-          'commit_total'
-         WHEN 'user rollbacks' THEN
-          'rollback_total'
-         WHEN 'DB time' THEN
-          'dbtime_total'
-       END name,
+SELECT name,
 			 s.USERNAME,
 			 SUM(ss.VALUE) value
   FROM v$sesstat ss, v$statname sn, v$session s
