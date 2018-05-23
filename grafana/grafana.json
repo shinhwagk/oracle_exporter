@@ -18,7 +18,7 @@
   "gnetId": 3333,
   "graphTooltip": 1,
   "id": 2,
-  "iteration": 1527062902417,
+  "iteration": 1527062902425,
   "links": [
     {
       "asDropdown": false,
@@ -545,6 +545,7 @@
       },
       "styles": [
         {
+          "$$hashKey": "object:612",
           "alias": "Time",
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "link": false,
@@ -552,6 +553,7 @@
           "type": "hidden"
         },
         {
+          "$$hashKey": "object:613",
           "alias": "",
           "colorMode": null,
           "colors": [
@@ -563,10 +565,11 @@
           "link": false,
           "pattern": "class",
           "thresholds": [],
-          "type": "string",
+          "type": "hidden",
           "unit": "µs"
         },
         {
+          "$$hashKey": "object:614",
           "alias": "",
           "colorMode": null,
           "colors": [
@@ -583,6 +586,7 @@
           "unit": "short"
         },
         {
+          "$$hashKey": "object:615",
           "alias": "",
           "colorMode": null,
           "colors": [
@@ -599,6 +603,7 @@
           "unit": "short"
         },
         {
+          "$$hashKey": "object:616",
           "alias": "",
           "colorMode": null,
           "colors": [
@@ -615,6 +620,7 @@
           "unit": "short"
         },
         {
+          "$$hashKey": "object:617",
           "alias": "",
           "colorMode": null,
           "colors": [
@@ -631,6 +637,7 @@
           "unit": "short"
         },
         {
+          "$$hashKey": "object:618",
           "alias": "",
           "colorMode": "row",
           "colors": [
@@ -650,6 +657,7 @@
           "unit": "µs"
         },
         {
+          "$$hashKey": "object:619",
           "alias": "",
           "colorMode": null,
           "colors": [
@@ -668,6 +676,7 @@
       ],
       "targets": [
         {
+          "$$hashKey": "object:557",
           "expr": " topk(8, idelta(oracle_event_waited_time_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]) / idelta(oracle_event_waits_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]))",
           "format": "table",
           "hide": false,
@@ -695,6 +704,7 @@
       "repeat": "db_name",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -741,6 +751,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -831,6 +842,7 @@
       "links": [],
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -904,6 +916,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -989,6 +1002,7 @@
       "repeat": "db_name",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1031,6 +1045,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1142,6 +1157,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1252,6 +1268,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1363,6 +1380,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1469,6 +1487,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1574,6 +1593,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1680,6 +1700,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1787,6 +1808,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1892,6 +1914,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1997,6 +2020,7 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
+          "$$hashKey": "object:344",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -2649,6 +2673,7 @@
         "allFormat": "glob",
         "allValue": null,
         "current": {
+          "tags": [],
           "text": "whlt",
           "value": "whlt"
         },
@@ -2800,5 +2825,5 @@
   "timezone": "browser",
   "title": "oracle",
   "uid": "3Nw8I1Wmz",
-  "version": 119
+  "version": 120
 }
