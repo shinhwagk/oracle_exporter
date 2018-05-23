@@ -35,13 +35,8 @@ func (c *sqlCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var sqlID string
-		var cpuTime float64
-		var elapsedTime float64
-		var executions float64
-		var bufferGets float64
-		var username string
-		var diskReads float64
+		var sqlID, username string
+		var cpuTime, elapsedTime, executions, bufferGets, diskReads float64
 		if err := rows.Scan(&sqlID, &cpuTime, &elapsedTime, &executions, &bufferGets, &username, &diskReads); err != nil {
 			return err
 		}
