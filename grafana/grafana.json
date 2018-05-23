@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:1175",
+        "$$hashKey": "object:317",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -18,7 +18,7 @@
   "gnetId": 3333,
   "graphTooltip": 1,
   "id": 2,
-  "iteration": 1526973599657,
+  "iteration": 1527061914307,
   "links": [
     {
       "asDropdown": false,
@@ -254,6 +254,7 @@
         {
           "expr": "sort(topk(5, idelta(oracle_sesstat_dbtime_total{db_name=\"$db_name\"}[2m])))",
           "format": "time_series",
+          "instant": true,
           "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "{{username}}",
@@ -439,28 +440,6 @@
       "valueName": "current"
     },
     {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 8
-      },
-      "id": 61,
-      "panels": [],
-      "repeat": "db_name",
-      "scopedVars": {
-        "db_name": {
-          "$$hashKey": "object:1330",
-          "selected": true,
-          "text": "whlt",
-          "value": "whlt"
-        }
-      },
-      "title": "Widgets",
-      "type": "row"
-    },
-    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -468,10 +447,10 @@
       "datasource": "p",
       "fill": 0,
       "gridPos": {
-        "h": 5,
-        "w": 24,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 9
+        "y": 8
       },
       "id": 78,
       "legend": {
@@ -491,14 +470,6 @@
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
-      "scopedVars": {
-        "db_name": {
-          "$$hashKey": "object:1330",
-          "selected": true,
-          "text": "whlt",
-          "value": "whlt"
-        }
-      },
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
@@ -553,6 +524,183 @@
       }
     },
     {
+      "columns": [],
+      "datasource": "p",
+      "fontSize": "100%",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "hideTimeOverride": false,
+      "id": 104,
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": null,
+        "desc": false
+      },
+      "styles": [
+        {
+          "alias": "Time",
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "link": false,
+          "pattern": "Time",
+          "type": "hidden"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 3,
+          "link": false,
+          "pattern": "class",
+          "thresholds": [],
+          "type": "string",
+          "unit": "µs"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "db_env",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "db_name",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "job",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "#629e51"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "event",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "Value",
+          "thresholds": [],
+          "type": "number",
+          "unit": "µs"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "instance",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        }
+      ],
+      "targets": [
+        {
+          "expr": " topk(8, idelta(oracle_event_waited_time_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]) / idelta(oracle_event_waits_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]))",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "1m",
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "title": "Top Event 8",
+      "transform": "table",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 61,
+      "panels": [],
+      "repeat": "db_name",
+      "scopedVars": {
+        "db_name": {
+          "selected": true,
+          "text": "whlt",
+          "value": "whlt"
+        }
+      },
+      "title": "Widgets",
+      "type": "row"
+    },
+    {
       "aliasColors": {},
       "bars": true,
       "dashLength": 10,
@@ -564,7 +712,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 17
       },
       "id": 74,
       "legend": {
@@ -590,7 +738,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -670,7 +817,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 17
       },
       "heatmap": {},
       "highlightCards": true,
@@ -681,7 +828,6 @@
       "links": [],
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -731,7 +877,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 25
       },
       "id": 72,
       "legend": {
@@ -755,7 +901,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -834,14 +979,13 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 145
+        "y": 32
       },
       "id": 89,
       "panels": [],
       "repeat": "db_name",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -861,7 +1005,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 146
+        "y": 33
       },
       "id": 91,
       "legend": {
@@ -884,7 +1028,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -973,7 +1116,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 146
+        "y": 33
       },
       "id": 92,
       "legend": {
@@ -996,7 +1139,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1085,7 +1227,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 153
+        "y": 40
       },
       "id": 80,
       "legend": {
@@ -1107,7 +1249,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1129,7 +1270,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:1383",
           "expr": "idelta(oracle_sysstat_redo_total{db_name=\"$db_name\"}[3m])",
           "format": "time_series",
           "instant": false,
@@ -1139,7 +1279,6 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:1384",
           "expr": "idelta(oracle_sysstat_redo_total{db_name=\"$db_name\"}[2m]) / (idelta(oracle_sysstat_commit_total{db_name=\"$db_name\"}[2m]) + idelta(oracle_sysstat_rollback_total{db_name=\"$db_name\"}[2m]))",
           "format": "time_series",
           "interval": "1m",
@@ -1167,7 +1306,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:1433",
           "format": "decbytes",
           "label": null,
           "logBase": 1,
@@ -1176,7 +1314,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:1434",
           "format": "decbytes",
           "label": null,
           "logBase": 1,
@@ -1201,7 +1338,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 153
+        "y": 40
       },
       "id": 82,
       "legend": {
@@ -1223,7 +1360,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1308,7 +1444,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 153
+        "y": 40
       },
       "id": 85,
       "legend": {
@@ -1330,7 +1466,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1414,7 +1549,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 153
+        "y": 40
       },
       "id": 83,
       "legend": {
@@ -1436,7 +1571,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1521,7 +1655,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 158
+        "y": 45
       },
       "id": 81,
       "legend": {
@@ -1543,7 +1677,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1629,7 +1762,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 158
+        "y": 45
       },
       "id": 87,
       "legend": {
@@ -1651,7 +1784,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1735,7 +1867,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 158
+        "y": 45
       },
       "id": 86,
       "legend": {
@@ -1757,7 +1889,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1841,7 +1972,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 158
+        "y": 45
       },
       "id": 84,
       "legend": {
@@ -1863,7 +1994,6 @@
       "renderer": "flot",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:1330",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1942,7 +2072,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 641
+        "y": 50
       },
       "id": 65,
       "panels": [],
@@ -1961,7 +2091,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 642
+        "y": 51
       },
       "id": 98,
       "legend": {
@@ -1986,7 +2116,6 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1919",
           "alias": "/.*large write/",
           "transform": "negative-Y"
         }
@@ -1996,7 +2125,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:1623",
           "expr": "idelta(oracle_datafile_large_read_megabytes_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
@@ -2005,7 +2133,6 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:1722",
           "expr": "idelta(oracle_datafile_large_write_megabytes_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "intervalFactor": 1,
@@ -2032,7 +2159,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:1671",
           "format": "decmbytes",
           "label": null,
           "logBase": 1,
@@ -2041,7 +2167,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:1672",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -2066,7 +2191,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 642
+        "y": 51
       },
       "id": 99,
       "legend": {
@@ -2091,7 +2216,6 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
-          "$$hashKey": "object:1919",
           "alias": "/.*small write/",
           "transform": "negative-Y"
         }
@@ -2101,7 +2225,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:1623",
           "expr": "idelta(oracle_datafile_small_read_megabytes_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "interval": "1m",
@@ -2110,7 +2233,6 @@
           "refId": "A"
         },
         {
-          "$$hashKey": "object:1722",
           "expr": "idelta(oracle_datafile_small_write_megabytes_total{db_name=\"$db_name\"}[2m])",
           "format": "time_series",
           "intervalFactor": 1,
@@ -2137,7 +2259,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:1671",
           "format": "decmbytes",
           "label": null,
           "logBase": 1,
@@ -2146,7 +2267,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:1672",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -2171,7 +2291,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 651
+        "y": 60
       },
       "id": 67,
       "legend": {
@@ -2263,7 +2383,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 651
+        "y": 60
       },
       "id": 68,
       "legend": {
@@ -2349,7 +2469,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 660
+        "y": 69
       },
       "id": 70,
       "legend": {
@@ -2435,7 +2555,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 660
+        "y": 69
       },
       "id": 94,
       "legend": {
@@ -2526,7 +2646,6 @@
         "allFormat": "glob",
         "allValue": null,
         "current": {
-          "tags": [],
           "text": "whlt",
           "value": "whlt"
         },
@@ -2678,5 +2797,5 @@
   "timezone": "browser",
   "title": "oracle",
   "uid": "3Nw8I1Wmz",
-  "version": 112
+  "version": 115
 }
