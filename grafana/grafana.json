@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:317",
+        "$$hashKey": "object:92",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -18,7 +18,7 @@
   "gnetId": 3333,
   "graphTooltip": 1,
   "id": 2,
-  "iteration": 1527061914307,
+  "iteration": 1527062902417,
   "links": [
     {
       "asDropdown": false,
@@ -357,15 +357,15 @@
       "colorBackground": false,
       "colorValue": true,
       "colors": [
-        "rgba(245, 54, 54, 0.9)",
+        "#508642",
         "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
+        "rgba(245, 54, 54, 0.9)"
       ],
       "datasource": "p",
       "decimals": null,
       "editable": true,
       "error": false,
-      "format": "none",
+      "format": "decbytes",
       "gauge": {
         "maxValue": 100,
         "minValue": 0,
@@ -421,9 +421,9 @@
           "calculatedInterval": "10m",
           "datasourceErrors": {},
           "errors": {},
-          "expr": "idelta(oracle_sysstat_execute_total{db_name=\"$db_name\"}[2m])",
+          "expr": "idelta(oracle_sysstat_redo_total{db_name=\"$db_name\"}[2m]) / 60",
           "format": "time_series",
-          "interval": "5m",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "",
           "metric": "",
@@ -431,8 +431,8 @@
           "step": 300
         }
       ],
-      "thresholds": "",
-      "title": "execute count",
+      "thresholds": "3145728,5242880",
+      "title": "redo size/s",
       "transparent": false,
       "type": "singlestat",
       "valueFontSize": "100%",
@@ -632,17 +632,20 @@
         },
         {
           "alias": "",
-          "colorMode": null,
+          "colorMode": "row",
           "colors": [
-            "rgba(245, 54, 54, 0.9)",
+            "#2f575e",
             "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
+            "rgba(245, 54, 54, 0.9)"
           ],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "decimals": 2,
           "mappingType": 1,
           "pattern": "Value",
-          "thresholds": [],
+          "thresholds": [
+            "100000",
+            "200000"
+          ],
           "type": "number",
           "unit": "µs"
         },
@@ -2797,5 +2800,5 @@
   "timezone": "browser",
   "title": "oracle",
   "uid": "3Nw8I1Wmz",
-  "version": 115
+  "version": 119
 }
