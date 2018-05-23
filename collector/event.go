@@ -2,13 +2,12 @@ package collector
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type eventCollector struct {
-	descs map[string]*prometheus.Desc
+	descs [2]*prometheus.Desc
 }
 
 func init() {
@@ -17,9 +16,10 @@ func init() {
 
 // NewEventCollector returns a new Collector exposing session activity statistics.
 func NewEventCollector() (Collector, error) {
-	descs := make(map[string]*prometheus.Desc)
-	descs["total_waits"] = newDesc("event", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event"}, nil)
-	descs["time_waited_micro"] = newDesc("event", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event"}, nil)
+	descs := [2]*prometheus.Desc{
+		newDesc("event", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event"}, nil),
+		newDesc("event", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event"}, nil),
+	}
 	return &eventCollector{descs}, nil
 }
 
@@ -37,13 +37,8 @@ func (c *eventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 			return err
 		}
 
-		desc, ok := c.descs[name]
-		if ok {
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, waits, name)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, time_waited, name)
-		} else {
-			return errors.New("event desc no exist")
-		}
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, name)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, time_waited, name)
 	}
 	return nil
 }
