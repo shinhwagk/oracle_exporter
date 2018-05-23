@@ -51,8 +51,7 @@ SELECT ddf.tablespace_name , SUM(dfs.bytes), sum(ddf.bytes), sum(ddf.MAXBYTES)
   FROM dba_data_files ddf, dba_tablespaces dt, dba_free_space dfs
  WHERE ddf.tablespace_name = dt.tablespace_name
    AND ddf.file_id = dfs.file_id(+)
- GROUP BY ddf.tablespace_name
-`
+ GROUP BY ddf.tablespace_name`
 
 // SELECT Z.name,
 //   dt.status,
