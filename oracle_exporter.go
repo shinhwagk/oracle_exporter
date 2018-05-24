@@ -61,7 +61,6 @@ func cycleHandler(cycle string) func(http.ResponseWriter, *http.Request) {
 func main() {
 	var (
 		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9100").String()
-		cycle         = kingpin.Flag("web.cycle", "Address on which to expose metrics and web interface.").Default("m").String()
 	)
 
 	log.AddFlags(kingpin.CommandLine)
@@ -72,7 +71,7 @@ func main() {
 	log.Infoln("Starting oracle_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	nc, err := collector.NewOracleCollector(*cycle)
+	nc, err := collector.NewOracleCollector("a")
 	if err != nil {
 		log.Fatalf("Couldn't create collector: %s", err)
 	}
