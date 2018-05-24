@@ -63,10 +63,10 @@ func registerCollector(collector string, cycle string, isDefaultEnabled bool, fa
 	} else if cycle == cDay {
 		collectorStateDay[collector] = flag
 		factoriesDay[collector] = factory
-	} else {
-		collectorStateAll[collector] = flag
-		factoriesAll[collector] = factory
 	}
+
+	collectorStateAll[collector] = flag
+	factoriesAll[collector] = factory
 }
 
 // OracleCollector implements the prometheus.Collector interface.

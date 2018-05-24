@@ -71,7 +71,7 @@ func main() {
 	log.Infoln("Starting oracle_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	nc, err := collector.NewOracleCollector("a")
+	nc, err := collector.NewOracleCollector("a") // all
 	if err != nil {
 		log.Fatalf("Couldn't create collector: %s", err)
 	}
@@ -87,9 +87,9 @@ func main() {
 		log.Infof(" - %s", n)
 	}
 
-	http.HandleFunc("/metric/minute", cycleHandler("m"))
-	http.HandleFunc("/metric/hour", cycleHandler("h"))
-	http.HandleFunc("/metric/day", cycleHandler("d"))
+	http.HandleFunc("/metric/minute", cycleHandler("m")) // minute
+	http.HandleFunc("/metric/hour", cycleHandler("h"))   // hour
+	http.HandleFunc("/metric/day", cycleHandler("d"))    // day
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Oracle Exporter</title></head>
