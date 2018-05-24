@@ -89,13 +89,15 @@ func main() {
 
 	http.HandleFunc("/metric/minute", cycleHandler(collector.cMin))
 	http.HandleFunc("/metric/hour", cycleHandler(collector.cHour))
-	http.HandleFunc("/metric/hour", cycleHandler(collector.cDay))
+	http.HandleFunc("/metric/day", cycleHandler(collector.cDay))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Oracle Exporter</title></head>
 			<body>
 			<h1>Oracle Exporter</h1>
-			<p><a href="` + *metricsPath + `">Metrics</a></p>
+			<p><a href="/metric/minute">Metrics-minute</a></p>
+			<p><a href="/metric/hour">Metrics-hour</a></p>
+			<p><a href="/metric/day">Metrics-day</a></p>
 			</body>
 			</html>`))
 	})
