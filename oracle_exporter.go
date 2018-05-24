@@ -87,17 +87,13 @@ func main() {
 		log.Infof(" - %s", n)
 	}
 
-	http.HandleFunc("/metric/minute", cycleHandler("m"))
-	http.HandleFunc("/metric/hour", cycleHandler("h"))
-	http.HandleFunc("/metric/day", cycleHandler("d"))
+	http.HandleFunc(*metricsPath, cycleHandler(*cycle))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Oracle Exporter</title></head>
 			<body>
 			<h1>Oracle Exporter</h1>
-			<p><a href="/metric/minute">Metrics-minute</a></p>
-			<p><a href="/metric/hour">Metrics-hour</a></p>
-			<p><a href="/metric/day">Metrics-day</a></p>
+			<p><a href="` + *metricsPath + `">Metrics</a></p>
 			</body>
 			</html>`))
 	})
