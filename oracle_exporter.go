@@ -61,6 +61,7 @@ func cycleHandler(cycle string) func(http.ResponseWriter, *http.Request) {
 func main() {
 	var (
 		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9100").String()
+		cycle         = kingpin.Flag("web.cycle", "Address on which to expose metrics and web interface.").Default("m").String()
 	)
 
 	log.AddFlags(kingpin.CommandLine)
@@ -71,7 +72,7 @@ func main() {
 	log.Infoln("Starting oracle_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	nc, err := collector.NewOracleCollector()
+	nc, err := collector.NewOracleCollector(*cycle)
 	if err != nil {
 		log.Fatalf("Couldn't create collector: %s", err)
 	}
@@ -87,9 +88,9 @@ func main() {
 		log.Infof(" - %s", n)
 	}
 
-	http.HandleFunc("/metric/minute", cycleHandler(collector.cMin))
-	http.HandleFunc("/metric/hour", cycleHandler(collector.cHour))
-	http.HandleFunc("/metric/day", cycleHandler(collector.cDay))
+	http.HandleFunc("/metric/minute", cycleHandler("m"))
+	http.HandleFunc("/metric/hour", cycleHandler("h"))
+	http.HandleFunc("/metric/day", cycleHandler("d"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Oracle Exporter</title></head>
