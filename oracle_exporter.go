@@ -87,9 +87,9 @@ func main() {
 		log.Infof(" - %s", n)
 	}
 
-	http.HandleFunc("/metric/minute", cycleHandler("m")) // minute
-	http.HandleFunc("/metric/hour", cycleHandler("h"))   // hour
-	http.HandleFunc("/metric/day", cycleHandler("d"))    // day
+	http.HandleFunc("/metrics/minute", cycleHandler("m")) // minute
+	http.HandleFunc("/metrics/hour", cycleHandler("h"))   // hour
+	http.HandleFunc("/metrics/day", cycleHandler("d"))    // day
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Oracle Exporter</title></head>
