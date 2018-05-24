@@ -62,7 +62,7 @@ SELECT name,
                    'execute count',
                    'user commits',
                    'user rollbacks',
-									 'DB time'
+									 'DB time',
 									 'redo size')
    AND s.USERNAME is not null
    AND s.type = 'USER'
