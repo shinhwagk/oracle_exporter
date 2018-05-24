@@ -12,7 +12,7 @@ type sesstatCollector struct {
 }
 
 func init() {
-	registerCollector("sesstat", defaultEnabled, NewSesstatCollector)
+	registerCollector("sesstat", cMin, defaultEnabled, NewSesstatCollector)
 }
 
 // NewSesstatCollector returns a new Collector exposing session activity statistics.

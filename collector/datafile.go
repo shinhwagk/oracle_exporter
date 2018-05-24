@@ -11,7 +11,7 @@ type datafileCollector struct {
 }
 
 func init() {
-	registerCollector("datafile", defaultEnabled, NewDatafileCollector)
+	registerCollector("datafile", cMin, defaultEnabled, NewDatafileCollector)
 }
 
 // NewDatafileCollector returns a new Collector exposing session activity statistics.

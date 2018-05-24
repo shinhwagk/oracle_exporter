@@ -20,45 +20,47 @@ func init() {
 	prometheus.MustRegister(version.NewCollector("oracle_exporter"))
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	filters := r.URL.Query()["collect[]"]
-	log.Debugln("collect query:", filters)
+func cycleHandler(cycle string) func(http.ResponseWriter, *http.Request) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		filters := r.URL.Query()["collect[]"]
+		log.Debugln("collect query:", filters)
 
-	nc, err := collector.NewOracleCollector(filters...)
-	if err != nil {
-		log.Warnln("Couldn't create", err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("Couldn't create %s", err)))
-		return
+		nc, err := collector.NewOracleCollector(cycle, filters...)
+		if err != nil {
+			log.Warnln("Couldn't create", err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Couldn't create %s", err)))
+			return
+		}
+
+		registry := prometheus.NewRegistry()
+		err = registry.Register(nc)
+		if err != nil {
+			log.Errorln("Couldn't register collector:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("Couldn't register collector: %s", err)))
+			return
+		}
+
+		gatherers := prometheus.Gatherers{prometheus.DefaultGatherer, registry}
+
+		// Delegate http serving to Prometheus client library, which will call collector.Collect.
+		h := promhttp.InstrumentMetricHandler(
+			registry,
+			promhttp.HandlerFor(gatherers,
+				promhttp.HandlerOpts{
+					ErrorLog:      log.NewErrorLogger(),
+					ErrorHandling: promhttp.ContinueOnError,
+				}),
+		)
+		h.ServeHTTP(w, r)
 	}
-
-	registry := prometheus.NewRegistry()
-	err = registry.Register(nc)
-	if err != nil {
-		log.Errorln("Couldn't register collector:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("Couldn't register collector: %s", err)))
-		return
-	}
-
-	gatherers := prometheus.Gatherers{prometheus.DefaultGatherer, registry}
-
-	// Delegate http serving to Prometheus client library, which will call collector.Collect.
-	h := promhttp.InstrumentMetricHandler(
-		registry,
-		promhttp.HandlerFor(gatherers,
-			promhttp.HandlerOpts{
-				ErrorLog:      log.NewErrorLogger(),
-				ErrorHandling: promhttp.ContinueOnError,
-			}),
-	)
-	h.ServeHTTP(w, r)
+	return handler
 }
 
 func main() {
 	var (
 		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9100").String()
-		metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 	)
 
 	log.AddFlags(kingpin.CommandLine)
@@ -85,7 +87,9 @@ func main() {
 		log.Infof(" - %s", n)
 	}
 
-	http.HandleFunc(*metricsPath, handler)
+	http.HandleFunc("/metric/minute", cycleHandler(collector.cMin))
+	http.HandleFunc("/metric/hour", cycleHandler(collector.cHour))
+	http.HandleFunc("/metric/hour", cycleHandler(collector.cDay))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Oracle Exporter</title></head>

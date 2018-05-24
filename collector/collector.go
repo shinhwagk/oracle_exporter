@@ -26,14 +26,21 @@ var (
 const (
 	defaultEnabled  = true
 	defaultDisabled = false
+	cHour           = "h"
+	cMin            = "m"
+	cDay            = "d"
 )
 
 var (
-	factories      = make(map[string]func() (Collector, error))
-	collectorState = make(map[string]*bool)
+	factoriesMinute      = make(map[string]func() (Collector, error))
+	collectorStateMinute = make(map[string]*bool)
+	factoriesHour        = make(map[string]func() (Collector, error))
+	collectorStateHour   = make(map[string]*bool)
+	factoriesDay         = make(map[string]func() (Collector, error))
+	collectorStateDay    = make(map[string]*bool)
 )
 
-func registerCollector(collector string, isDefaultEnabled bool, factory func() (Collector, error)) {
+func registerCollector(collector string, cycle string, isDefaultEnabled bool, factory func() (Collector, error)) {
 	var helpDefaultState string
 	if isDefaultEnabled {
 		helpDefaultState = "enabled"
@@ -44,11 +51,15 @@ func registerCollector(collector string, isDefaultEnabled bool, factory func() (
 	flagName := fmt.Sprintf("collector.%s", collector)
 	flagHelp := fmt.Sprintf("Enable the %s collector (default: %s).", collector, helpDefaultState)
 	defaultValue := fmt.Sprintf("%v", isDefaultEnabled)
-
 	flag := kingpin.Flag(flagName, flagHelp).Default(defaultValue).Bool()
-	collectorState[collector] = flag
-
-	factories[collector] = factory
+	if cycle == cMin {
+		collectorStateMinute[collector] = flag
+		factoriesMinute[collector] = factory
+	}
+	if cycle == cHour {
+		collectorStateHour[collector] = flag
+		factoriesHour[collector] = factory
+	}
 }
 
 // OracleCollector implements the prometheus.Collector interface.
@@ -57,7 +68,17 @@ type oracleCollector struct {
 }
 
 // NewOracleCollector creates a new OracleCollector
-func NewOracleCollector(filters ...string) (*oracleCollector, error) {
+func NewOracleCollector(cycle string, filters ...string) (*oracleCollector, error) {
+	if cycle == cMin {
+		return NewOracleCollectorByCycle(factoriesMinute, collectorStateMinute, filters)
+	} else if cycle == cHour {
+		return NewOracleCollectorByCycle(factoriesHour, collectorStateHour, filters)
+	} else {
+		return NewOracleCollectorByCycle(factoriesDay, collectorStateDay, filters)
+	}
+}
+
+func NewOracleCollectorByCycle(factories map[string]func() (Collector, error), collectorState map[string]*bool, filters []string) (*oracleCollector, error) {
 	f := make(map[string]bool)
 	for _, filter := range filters {
 		enabled, exist := collectorState[filter]
