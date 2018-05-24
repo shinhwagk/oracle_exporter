@@ -44,10 +44,10 @@ func (c *sessEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) err
 }
 
 const sessEventSQL = `
-SELECT se.event,
+SELECT ss.username,
+			 se.event,
        se.total_waits,
        se.time_waited_micro,
-       se.wait_class,
-       ss.username
+       se.wait_class
   FROM v$session_event se, v$session ss
  where ss.sid = se.sid`
