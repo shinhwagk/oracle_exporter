@@ -33,7 +33,7 @@ func (c *eventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	for rows.Next() {
 		var name, waitClass string
 		var waits, timeWaited float64
-		if err := rows.Scan(&name, &waits, &waitClass, &timeWaited); err != nil {
+		if err := rows.Scan(&name, &waits, &timeWaited, &waitClass); err != nil {
 			return err
 		}
 
