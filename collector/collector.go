@@ -38,6 +38,8 @@ var (
 	collectorStateHour   = make(map[string]*bool)
 	factoriesDay         = make(map[string]func() (Collector, error))
 	collectorStateDay    = make(map[string]*bool)
+	factoriesAll         = make(map[string]func() (Collector, error))
+	collectorStateAll    = make(map[string]*bool)
 )
 
 func registerCollector(collector string, cycle string, isDefaultEnabled bool, factory func() (Collector, error)) {
@@ -55,10 +57,15 @@ func registerCollector(collector string, cycle string, isDefaultEnabled bool, fa
 	if cycle == cMin {
 		collectorStateMinute[collector] = flag
 		factoriesMinute[collector] = factory
-	}
-	if cycle == cHour {
+	} else if cycle == cHour {
 		collectorStateHour[collector] = flag
 		factoriesHour[collector] = factory
+	} else if cycle == cDay {
+		collectorStateDay[collector] = flag
+		factoriesDay[collector] = factory
+	} else {
+		collectorStateAll[collector] = flag
+		factoriesAll[collector] = factory
 	}
 }
 
@@ -73,8 +80,10 @@ func NewOracleCollector(cycle string, filters ...string) (*oracleCollector, erro
 		return NewOracleCollectorByCycle(factoriesMinute, collectorStateMinute, filters)
 	} else if cycle == cHour {
 		return NewOracleCollectorByCycle(factoriesHour, collectorStateHour, filters)
-	} else {
+	} else if cycle == cDay {
 		return NewOracleCollectorByCycle(factoriesDay, collectorStateDay, filters)
+	} else {
+		return NewOracleCollectorByCycle(factoriesAll, collectorStateAll, filters)
 	}
 }
 
