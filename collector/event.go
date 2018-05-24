@@ -31,14 +31,14 @@ func (c *eventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var name, wait_class string
-		var waits, time_waited float64
-		if err := rows.Scan(&name, &waits, &time_waited, &wait_class); err != nil {
+		var name, waitClass string
+		var waits, timeWaited float64
+		if err := rows.Scan(&name, &waits, &waitClass, &timeWaited); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, name, wait_class)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, time_waited, name, wait_class)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, name, waitClass)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeWaited, name, waitClass)
 	}
 	return nil
 }

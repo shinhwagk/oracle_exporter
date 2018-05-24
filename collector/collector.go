@@ -126,16 +126,16 @@ func execute(db *sql.DB, name string, c Collector, ch chan<- prometheus.Metric) 
 	err := c.Update(db, ch)
 	duration := time.Since(begin)
 
-	var success float64
+	var success float64 = 1
 
 	if err != nil {
 		log.Errorf("ERROR: %s collector failed after %fs: %s", name, duration.Seconds(), err)
 		success = 0
 	} else {
 		log.Debugf("OK: %s collector succeeded after %fs.", name, duration.Seconds())
-		success = 1
 	}
-	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(begin).Seconds(), name)
+
+	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, duration.Seconds(), name)
 	ch <- prometheus.MustNewConstMetric(scrapeSuccessDesc, prometheus.GaugeValue, success, name)
 }
 
