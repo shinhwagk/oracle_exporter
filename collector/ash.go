@@ -41,7 +41,7 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 }
 
 const ashSQL = `
-select ash.session_type, du.username, ash.machine, count(*)
+select ash.session_type, du.username, ash.machine, count(*) cnt
   from v$active_session_history ash, dba_users du
  where du.user_id = ash.user_id
    and ash.SAMPLE_TIME >= trunc(sysdate, 'MI') - 1 / 24 / 60
