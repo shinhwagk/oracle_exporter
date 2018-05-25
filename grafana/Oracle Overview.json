@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:154",
+        "$$hashKey": "object:5003",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -18,7 +18,7 @@
   "gnetId": 3333,
   "graphTooltip": 1,
   "id": 2,
-  "iteration": 1527150883241,
+  "iteration": 1527230529267,
   "links": [
     {
       "asDropdown": false,
@@ -39,6 +39,16 @@
       "includeVars": true,
       "tags": [
         "tablespace"
+      ],
+      "targetBlank": true,
+      "type": "dashboards"
+    },
+    {
+      "icon": "external link",
+      "includeVars": true,
+      "tags": [
+        "oracle",
+        "user"
       ],
       "targetBlank": true,
       "type": "dashboards"
@@ -110,7 +120,6 @@
       "tableColumn": "",
       "targets": [
         {
-          "$$hashKey": "object:293",
           "calculatedInterval": "10m",
           "datasourceErrors": {},
           "errors": {},
@@ -213,7 +222,7 @@
           "errors": {},
           "expr": "sum(oracle_sessions_activity{status='ACTIVE', db_name=\"$db_name\", type=\"USER\"})",
           "format": "time_series",
-          "interval": "$interval",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "",
           "metric": "",
@@ -235,7 +244,7 @@
       "cacheTimeout": null,
       "combine": {
         "label": "Others",
-        "threshold": 0
+        "threshold": "0.02"
       },
       "datasource": "p",
       "fontSize": "80%",
@@ -678,7 +687,7 @@
       ],
       "targets": [
         {
-          "expr": " topk(8, idelta(oracle_event_waited_time_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]) / idelta(oracle_event_waits_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]))",
+          "expr": " topk(8, idelta(oracle_sysevent_waited_time_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]) / idelta(oracle_sysevent_waits_total{db_name=\"$db_name\", class!=\"Idle\"}[2m]))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -840,7 +849,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -931,7 +939,6 @@
           "links": [],
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1005,7 +1012,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1082,7 +1088,6 @@
       "repeat": "db_name",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:230",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -1135,7 +1140,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1247,7 +1251,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1358,7 +1361,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1470,7 +1472,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1577,7 +1578,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1683,7 +1683,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1790,7 +1789,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -1898,7 +1896,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -2004,7 +2001,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -2110,7 +2106,6 @@
           "renderer": "flot",
           "scopedVars": {
             "db_name": {
-              "$$hashKey": "object:230",
               "selected": true,
               "text": "whlt",
               "value": "whlt"
@@ -2187,7 +2182,6 @@
       "repeat": "db_name",
       "scopedVars": {
         "db_name": {
-          "$$hashKey": "object:230",
           "selected": true,
           "text": "whlt",
           "value": "whlt"
@@ -2777,7 +2771,6 @@
         "allFormat": "glob",
         "allValue": null,
         "current": {
-          "tags": [],
           "text": "whlt",
           "value": "whlt"
         },
@@ -2929,5 +2922,5 @@
   "timezone": "browser",
   "title": "Oracle Overview",
   "uid": "3Nw8I1Wmz",
-  "version": 127
+  "version": 132
 }
