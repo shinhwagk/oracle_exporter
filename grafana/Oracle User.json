@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:90",
+        "$$hashKey": "object:8821",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -15,9 +15,9 @@
   },
   "editable": true,
   "gnetId": null,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": 15,
-  "iteration": 1527231765605,
+  "iteration": 1527235591483,
   "links": [],
   "panels": [
     {
@@ -47,12 +47,12 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "p",
+      "datasource": null,
       "format": "none",
       "gauge": {
-        "maxValue": null,
+        "maxValue": 100,
         "minValue": 0,
-        "show": true,
+        "show": false,
         "thresholdLabels": false,
         "thresholdMarkers": true
       },
@@ -62,16 +62,18 @@
         "x": 0,
         "y": 2
       },
-      "id": 69,
+      "id": 87,
       "interval": null,
       "links": [],
       "mappingType": 1,
       "mappingTypes": [
         {
+          "$$hashKey": "object:10905",
           "name": "value to text",
           "value": 1
         },
         {
+          "$$hashKey": "object:10906",
           "name": "range to text",
           "value": 2
         }
@@ -99,12 +101,11 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(oracle_sessions_activity{status='ACTIVE', db_name=\"$db_name\", type=\"USER\", username=\"$username\"})",
+          "$$hashKey": "object:10528",
+          "expr": "sum(oracle_ash_info{type=\"FOREGROUND\",db_name=\"$db_name\", username=\"[[username]]USER\"} offset 1m) / count(oracle_ash_info{type=\"FOREGROUND\", db_name=\"$db_name\", username=\"[[username]]USER\"} offset 1m)",
           "format": "time_series",
-          "hide": true,
           "interval": "1m",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -114,6 +115,7 @@
       "valueFontSize": "80%",
       "valueMaps": [
         {
+          "$$hashKey": "object:10908",
           "op": "=",
           "text": "N/A",
           "value": "null"
@@ -151,12 +153,10 @@
       "mappingType": 1,
       "mappingTypes": [
         {
-          "$$hashKey": "object:1364",
           "name": "value to text",
           "value": 1
         },
         {
-          "$$hashKey": "object:1365",
           "name": "range to text",
           "value": 2
         }
@@ -184,7 +184,6 @@
       "tableColumn": "",
       "targets": [
         {
-          "$$hashKey": "object:1312",
           "expr": "idelta(oracle_sesstat_redo_total{db_name=\"$db_name\", username=\"[[username]]USER\"}[2m]) / 60",
           "format": "time_series",
           "interval": "1m",
@@ -198,7 +197,6 @@
       "valueFontSize": "80%",
       "valueMaps": [
         {
-          "$$hashKey": "object:1367",
           "op": "=",
           "text": "N/A",
           "value": "null"
@@ -644,10 +642,10 @@
       "repeatDirection": "v",
       "scopedVars": {
         "username": {
-          "$$hashKey": "object:300",
+          "$$hashKey": "object:8902",
           "selected": true,
-          "text": "PBSDB",
-          "value": "PBSDB"
+          "text": "DEBT",
+          "value": "DEBT"
         }
       },
       "seriesOverrides": [],
@@ -743,10 +741,10 @@
       "repeatDirection": "v",
       "scopedVars": {
         "username": {
-          "$$hashKey": "object:300",
+          "$$hashKey": "object:8902",
           "selected": true,
-          "text": "PBSDB",
-          "value": "PBSDB"
+          "text": "DEBT",
+          "value": "DEBT"
         }
       },
       "seriesOverrides": [
@@ -852,10 +850,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
           "tags": [],
-          "text": "PBSDB",
-          "value": "PBSDB"
+          "text": "DEBT",
+          "value": "DEBT"
         },
         "datasource": "p",
         "hide": 0,
@@ -931,5 +928,5 @@
   "timezone": "",
   "title": "Oracle User",
   "uid": "2nKo5KVmk",
-  "version": 59
+  "version": 63
 }

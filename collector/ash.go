@@ -41,9 +41,11 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 }
 
 const ashSQL = `
-select ash.session_type, du.username, ash.machine, count(*)
-  from v$active_session_history ash, dba_users du
- where du.user_id = ash.user_id
-   and ash.SAMPLE_TIME >= trunc(sysdate, 'MI') - 1 / 24 / 60
-   and ash.SAMPLE_TIME < trunc(sysdate, 'MI')
- group by ash.session_type, du.username, ash.machine, ash.SAMPLE_ID`
+select session_type, username, machine, avg(cnt)
+  from (select ash.session_type, du.username, ash.machine, count(*) cnt
+          from v$active_session_history ash, dba_users du
+         where du.user_id = ash.user_id
+           and ash.SAMPLE_TIME >= trunc(sysdate, 'MI') - 1 / 24 / 60
+           and ash.SAMPLE_TIME < trunc(sysdate, 'MI')
+         group by ash.session_type, du.username, ash.machine, ash.SAMPLE_ID)
+ group by session_type, username, machine`
