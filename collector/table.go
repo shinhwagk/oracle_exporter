@@ -2,13 +2,8 @@ package collector
 
 // import (
 // 	"database/sql"
-// 	"flag"
 
 // 	"github.com/prometheus/client_golang/prometheus"
-// )
-
-// var (
-// 	tableFlag = flag.Bool("collector.table", true, "for session activity collector")
 // )
 
 // type tableCollector struct {
@@ -16,7 +11,7 @@ package collector
 // }
 
 // func init() {
-// 	registerCollector("table", defaultEnabled, NewTableCollector)
+// 	registerCollector("table", cHour, defaultEnabled, NewTableCollector)
 // }
 
 // // NewTableCollector returns a new Collector exposing session activity statistics.
