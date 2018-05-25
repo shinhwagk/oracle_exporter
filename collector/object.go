@@ -51,5 +51,6 @@ select owner, object_type, count(*)
                      'OLAPSYS',
                      'EXFSYS',
                      'CTXSYS',
-                     'XDB')
+										 'XDB',
+										 'DMSYS')
  group by owner, object_type`
