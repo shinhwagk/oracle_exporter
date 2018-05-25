@@ -52,4 +52,4 @@ select owner, object_type, count(*)
                      'EXFSYS',
                      'CTXSYS',
                      'XDB')
- group by owner, object_type;`
+ group by owner, object_type`
