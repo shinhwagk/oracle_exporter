@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:5003",
+        "$$hashKey": "object:2924",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -18,7 +18,7 @@
   "gnetId": 3333,
   "graphTooltip": 1,
   "id": 2,
-  "iteration": 1527230529267,
+  "iteration": 1527237436645,
   "links": [
     {
       "asDropdown": false,
@@ -2763,7 +2763,8 @@
   "schemaVersion": 16,
   "style": "dark",
   "tags": [
-    "oracle"
+    "oracle",
+    "overview"
   ],
   "templating": {
     "list": [
@@ -2771,6 +2772,7 @@
         "allFormat": "glob",
         "allValue": null,
         "current": {
+          "selected": true,
           "text": "whlt",
           "value": "whlt"
         },
@@ -2922,5 +2924,5 @@
   "timezone": "browser",
   "title": "Oracle Overview",
   "uid": "3Nw8I1Wmz",
-  "version": 132
+  "version": 133
 }

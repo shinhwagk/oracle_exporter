@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:8821",
+        "$$hashKey": "object:4938",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -17,8 +17,19 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 15,
-  "iteration": 1527235591483,
-  "links": [],
+  "iteration": 1527237751042,
+  "links": [
+    {
+      "icon": "external link",
+      "includeVars": true,
+      "tags": [
+        "oracle",
+        "overview"
+      ],
+      "targetBlank": false,
+      "type": "dashboards"
+    }
+  ],
   "panels": [
     {
       "content": "# $db_name $username",
@@ -68,12 +79,10 @@
       "mappingType": 1,
       "mappingTypes": [
         {
-          "$$hashKey": "object:10905",
           "name": "value to text",
           "value": 1
         },
         {
-          "$$hashKey": "object:10906",
           "name": "range to text",
           "value": 2
         }
@@ -101,8 +110,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "$$hashKey": "object:10528",
-          "expr": "sum(oracle_ash_info{type=\"FOREGROUND\",db_name=\"$db_name\", username=\"[[username]]USER\"} offset 1m) / count(oracle_ash_info{type=\"FOREGROUND\", db_name=\"$db_name\", username=\"[[username]]USER\"} offset 1m)",
+          "expr": "ceil(sum(oracle_ash_info{type=\"FOREGROUND\",db_name=\"$db_name\", username=\"[[username]]USER\"} offset 1m) / count(oracle_ash_info{type=\"FOREGROUND\", db_name=\"$db_name\", username=\"[[username]]USER\"} offset 1m))",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 1,
@@ -115,7 +123,6 @@
       "valueFontSize": "80%",
       "valueMaps": [
         {
-          "$$hashKey": "object:10908",
           "op": "=",
           "text": "N/A",
           "value": "null"
@@ -184,8 +191,9 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "idelta(oracle_sesstat_redo_total{db_name=\"$db_name\", username=\"[[username]]USER\"}[2m]) / 60",
+          "expr": "idelta(oracle_sesstat_redo_total{db_name=\"$db_name\", username=\"[[username]]USER\"}[2m]) / 60 > 0",
           "format": "time_series",
+          "instant": false,
           "interval": "1m",
           "intervalFactor": 1,
           "refId": "A"
@@ -209,12 +217,12 @@
       "datasource": null,
       "fontSize": "100%",
       "gridPos": {
-        "h": 9,
+        "h": 4,
         "w": 6,
         "x": 12,
         "y": 2
       },
-      "id": 79,
+      "id": 88,
       "links": [],
       "pageSize": null,
       "scroll": true,
@@ -345,14 +353,30 @@
           "pattern": "username",
           "preserveFormat": false,
           "thresholds": [],
-          "type": "string",
+          "type": "hidden",
           "unit": "short",
           "valueMaps": []
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "type",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
         }
       ],
       "targets": [
         {
-          "expr": "oracle_object_total{db_name=\"$db_name\", username=~\"$username|[[username]]USER\"}",
+          "expr": "oracle_ash_info{db_name=\"$db_name\", username=~\"$username|[[username]]USER\"}",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -360,7 +384,7 @@
           "refId": "A"
         }
       ],
-      "title": "Objects",
+      "title": "Machine",
       "transform": "table",
       "type": "table"
     },
@@ -369,7 +393,7 @@
       "datasource": "p",
       "fontSize": "100%",
       "gridPos": {
-        "h": 9,
+        "h": 11,
         "w": 6,
         "x": 18,
         "y": 2
@@ -528,17 +552,178 @@
       ],
       "targets": [
         {
-          "expr": " topk(8, idelta(oracle_sessevent_waited_time_total{db_name=\"$db_name\", username=\"[[username]]USER\", class!=\"Idle\"}[2m]) / idelta(oracle_sessevent_waits_total{db_name=\"$db_name\", username=\"[[username]]USER\", class!=\"Idle\"}[2m]))",
+          "expr": " topk(12, idelta(oracle_sessevent_waited_time_total{db_name=\"$db_name\", username=\"[[username]]USER\", class!=\"Idle\"}[2m]) / idelta(oracle_sessevent_waits_total{db_name=\"$db_name\", username=\"[[username]]USER\", class!=\"Idle\"}[2m]))",
           "format": "table",
           "hide": false,
           "instant": true,
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 1,
           "refId": "A"
         }
       ],
       "timeFrom": null,
       "title": "Top Event",
+      "transform": "table",
+      "type": "table"
+    },
+    {
+      "columns": [],
+      "datasource": null,
+      "fontSize": "100%",
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 6
+      },
+      "id": 79,
+      "links": [],
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 0,
+        "desc": true
+      },
+      "styles": [
+        {
+          "alias": "Time",
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "hidden"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "__name__",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "db_env",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "instance",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "job",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "db_name",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": "row",
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "#508642"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "Value",
+          "preserveFormat": false,
+          "sanitize": false,
+          "thresholds": [
+            "1",
+            "1"
+          ],
+          "type": "string",
+          "unit": "short"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "username",
+          "preserveFormat": false,
+          "thresholds": [],
+          "type": "string",
+          "unit": "short",
+          "valueMaps": []
+        }
+      ],
+      "targets": [
+        {
+          "$$hashKey": "object:5972",
+          "expr": "oracle_object_total{db_name=\"$db_name\", username=~\"$username|[[username]]USER\"}",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "title": "Objects",
       "transform": "table",
       "type": "table"
     },
@@ -557,7 +742,7 @@
       "dataFormat": "timeseries",
       "datasource": null,
       "gridPos": {
-        "h": 9,
+        "h": 11,
         "w": 12,
         "x": 0,
         "y": 7
@@ -613,7 +798,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 11
+        "y": 13
       },
       "id": 10,
       "legend": {
@@ -642,7 +827,7 @@
       "repeatDirection": "v",
       "scopedVars": {
         "username": {
-          "$$hashKey": "object:8902",
+          "$$hashKey": "object:5592",
           "selected": true,
           "text": "DEBT",
           "value": "DEBT"
@@ -714,7 +899,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 11
+        "y": 13
       },
       "id": 11,
       "legend": {
@@ -741,7 +926,7 @@
       "repeatDirection": "v",
       "scopedVars": {
         "username": {
-          "$$hashKey": "object:8902",
+          "$$hashKey": "object:5592",
           "selected": true,
           "text": "DEBT",
           "value": "DEBT"
@@ -826,7 +1011,8 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
+          "tags": [],
           "text": "whlt",
           "value": "whlt"
         },
@@ -928,5 +1114,5 @@
   "timezone": "",
   "title": "Oracle User",
   "uid": "2nKo5KVmk",
-  "version": 63
+  "version": 78
 }
