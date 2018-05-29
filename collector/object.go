@@ -28,13 +28,13 @@ func (c *objectCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 	defer rows.Close()
 
 	for rows.Next() {
-		var owner, object_type string
+		var owner, objectType string
 		var count float64
-		if err := rows.Scan(&owner, &object_type, &count); err != nil {
+		if err := rows.Scan(&owner, &objectType, &count); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, count, owner, object_type)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, count, owner, objectType)
 	}
 	return nil
 }
