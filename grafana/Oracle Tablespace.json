@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:1231",
+        "$$hashKey": "object:442",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -17,10 +17,9 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 14,
-  "iteration": 1527239077370,
+  "iteration": 1527581427504,
   "links": [
     {
-      "$$hashKey": "object:3429",
       "icon": "external link",
       "includeVars": true,
       "tags": [
@@ -39,7 +38,7 @@
       "datasource": null,
       "fill": 0,
       "gridPos": {
-        "h": 16,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 0
@@ -70,7 +69,8 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
-          "$$hashKey": "object:2682"
+          "alias": "/.* r/",
+          "yaxis": 2
         }
       ],
       "spaceLength": 10,
@@ -78,14 +78,20 @@
       "steppedLine": false,
       "targets": [
         {
-          "$$hashKey": "object:1661",
           "expr": "oracle_tablespace_bytes{db_name=\"$db_name\"} - oracle_tablespace_free{db_name=\"$db_name\"}",
           "format": "time_series",
           "instant": false,
-          "interval": "1h",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ tablespace }}",
           "refId": "A"
+        },
+        {
+          "expr": "(oracle_tablespace_bytes{db_name=\"$db_name\"} - oracle_tablespace_free{db_name=\"$db_name\"}) / oracle_tablespace_max_bytes{db_name=\"$db_name\"} * 100",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{ tablespace  }} r",
+          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -107,7 +113,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:1735",
           "format": "decbytes",
           "label": null,
           "logBase": 1,
@@ -116,7 +121,207 @@
           "show": true
         },
         {
-          "$$hashKey": "object:1736",
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "p",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 6,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/.*large write/",
+          "transform": "negative-Y"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "idelta(oracle_datafile_large_read_megabytes_total{db_name=\"$db_name\"}[2m])",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 1,
+          "legendFormat": "{{tablespace}} large read ",
+          "refId": "A"
+        },
+        {
+          "expr": "idelta(oracle_datafile_large_write_megabytes_total{db_name=\"$db_name\"}[2m])",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{tablespace}} large write",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Large Write/Read MBytes",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decmbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "p",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 8,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": true,
+        "show": false,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "/.*small write/",
+          "transform": "negative-Y"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "idelta(oracle_datafile_small_read_megabytes_total{db_name=\"$db_name\"}[2m])",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 1,
+          "legendFormat": "{{tablespace}} small read ",
+          "refId": "A"
+        },
+        {
+          "expr": "idelta(oracle_datafile_small_write_megabytes_total{db_name=\"$db_name\"}[2m])",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 1,
+          "legendFormat": "{{tablespace}} small write",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Small Read/Write MBytes",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decmbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -131,7 +336,7 @@
       }
     }
   ],
-  "refresh": "1h",
+  "refresh": "1m",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [
@@ -142,10 +347,8 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "tags": [],
-          "text": "yali3",
-          "value": "yali3"
+          "text": "whlt",
+          "value": "whlt"
         },
         "datasource": "p",
         "hide": 0,
@@ -198,5 +401,5 @@
   "timezone": "browser",
   "title": "Oracle Tablespace",
   "uid": "wESsKFVmz",
-  "version": 10
+  "version": 20
 }

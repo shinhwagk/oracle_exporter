@@ -2,7 +2,7 @@
   "annotations": {
     "list": [
       {
-        "$$hashKey": "object:4938",
+        "$$hashKey": "object:256",
         "builtIn": 1,
         "datasource": "-- Grafana --",
         "enable": true,
@@ -17,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 15,
-  "iteration": 1527237751042,
+  "iteration": 1527584068507,
   "links": [
     {
       "icon": "external link",
@@ -376,7 +376,8 @@
       ],
       "targets": [
         {
-          "expr": "oracle_ash_info{db_name=\"$db_name\", username=~\"$username|[[username]]USER\"}",
+          "$$hashKey": "object:518",
+          "expr": "oracle_ash_info{db_name=\"$db_name\", username=~\"$username|[[username]]USER\"}[1m]",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -714,8 +715,8 @@
       ],
       "targets": [
         {
-          "$$hashKey": "object:5972",
-          "expr": "oracle_object_total{db_name=\"$db_name\", username=~\"$username|[[username]]USER\"}",
+          "$$hashKey": "object:392",
+          "expr": "oracle_object_total{db_name=\"$db_name\", username=~\"$username|[[username]]USER\"}[1h]",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -827,7 +828,6 @@
       "repeatDirection": "v",
       "scopedVars": {
         "username": {
-          "$$hashKey": "object:5592",
           "selected": true,
           "text": "DEBT",
           "value": "DEBT"
@@ -926,7 +926,6 @@
       "repeatDirection": "v",
       "scopedVars": {
         "username": {
-          "$$hashKey": "object:5592",
           "selected": true,
           "text": "DEBT",
           "value": "DEBT"
@@ -1011,8 +1010,6 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "tags": [],
           "text": "whlt",
           "value": "whlt"
         },
@@ -1036,7 +1033,6 @@
       {
         "allValue": null,
         "current": {
-          "tags": [],
           "text": "DEBT",
           "value": "DEBT"
         },
@@ -1114,5 +1110,5 @@
   "timezone": "",
   "title": "Oracle User",
   "uid": "2nKo5KVmk",
-  "version": 78
+  "version": 80
 }
