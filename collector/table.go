@@ -17,7 +17,7 @@ func init() {
 // NewTableCollector returns a new Collector exposing session activity statistics.
 func NewTableCollector() (Collector, error) {
 	return &tableCollector{
-		newDesc("table", "bytes_total", "Generic counter metric from v$sysstat view in Oracle.", []string{"owner", "table_name", "table_type"}, nil),
+		newDesc("table", "bytes_total", "Generic counter metric from v$sysstat view in Oracle.", []string{"owner", "table_name"}, nil),
 	}, nil
 }
 
@@ -30,19 +30,19 @@ func (c *tableCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var owner, name, segmentType string
+		var owner, name string
 		var value float64
-		if err := rows.Scan(&owner, &name, &segmentType, &value); err != nil {
+		if err := rows.Scan(&owner, &name, &value); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, value, owner, name, segmentType)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, value, owner, name)
 	}
 	return nil
 }
 
 const tableSQL = `
-SELECT owner, segment_name, segment_type, SUM(bytes)
+SELECT owner, segment_name, SUM(bytes)
   FROM DBA_EXTENTS
  WHERE owner NOT IN ('SYS',
                      'SYSTEM',
