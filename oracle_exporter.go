@@ -58,6 +58,24 @@ func cycleHandler(cycle string) func(http.ResponseWriter, *http.Request) {
 	return handler
 }
 
+func displayExporterByCycle(cycle string) {
+	nc, err := collector.NewOracleCollector(cycle)
+	if err != nil {
+		log.Fatalf("Couldn't create collector: %s", err)
+	}
+
+	// print endable collectors with sort.
+	log.Infof("Enabled %s collectors:", cycle)
+	collectors := []string{}
+	for n := range nc.Collectors {
+		collectors = append(collectors, n)
+	}
+	sort.Strings(collectors)
+	for _, n := range collectors {
+		log.Infof(" - %s", n)
+	}
+}
+
 func main() {
 	var (
 		listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9100").String()
@@ -71,21 +89,9 @@ func main() {
 	log.Infoln("Starting oracle_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	nc, err := collector.NewOracleCollector("a") // all
-	if err != nil {
-		log.Fatalf("Couldn't create collector: %s", err)
-	}
-
-	// print endable collectors with sort.
-	log.Infof("Enabled collectors:")
-	collectors := []string{}
-	for n := range nc.Collectors {
-		collectors = append(collectors, n)
-	}
-	sort.Strings(collectors)
-	for _, n := range collectors {
-		log.Infof(" - %s", n)
-	}
+	displayExporterByCycle("m")
+	displayExporterByCycle("h")
+	displayExporterByCycle("d")
 
 	http.HandleFunc("/metrics/minute", cycleHandler("m")) // minute
 	http.HandleFunc("/metrics/hour", cycleHandler("h"))   // hour
@@ -103,7 +109,7 @@ func main() {
 	})
 
 	log.Infoln("Listening on", *listenAddress)
-	err = http.ListenAndServe(*listenAddress, nil)
+	err := http.ListenAndServe(*listenAddress, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
