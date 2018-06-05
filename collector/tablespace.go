@@ -48,7 +48,7 @@ func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 
 const tablespaceSQL = `
 SELECT ddf.tablespace_name, nvl(dfs.bytes, 0) free, ddf.bytes, ddf.MAXBYTES
-  FROM (select tablespace_name, sum(MAXBYTES) maxbytes, sum(bytes) bytes
+  FROM (select tablespace_name, sum(DECODE(MAXBYTES, 0, bytes, MAXBYTES)) maxbytes, sum(bytes) bytes
           from dba_data_files
          group by tablespace_name) ddf,
        dba_tablespaces dt,
