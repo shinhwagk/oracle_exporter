@@ -17,11 +17,11 @@ func init() {
 // NewSQLCollector returns a new Collector exposing session activity statistics.
 func NewSQLCollector() (Collector, error) {
 	descs := [5]*prometheus.Desc{
-		newDesc("sql", "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id"}, nil),
-		newDesc("sql", "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id"}, nil),
-		newDesc("sql", "executions_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id"}, nil),
-		newDesc("sql", "buffer_gets_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id"}, nil),
-		newDesc("sql", "disk_read_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id"}, nil),
+		newDesc("sql", "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
+		newDesc("sql", "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
+		newDesc("sql", "executions_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
+		newDesc("sql", "buffer_gets_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
+		newDesc("sql", "disk_read_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
 	}
 	return &sqlCollector{descs}, nil
 }
@@ -57,10 +57,7 @@ select sql_id,
        executions,
        buffer_gets,
        PARSING_SCHEMA_NAME,
-       DISK_READS
-			 FROM v$sqlarea
-			 WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60
-				 AND PARSING_SCHEMA_ID IN
-						 (SELECT user_id
-								FROM DBA_USERS du
-							 WHERE du.username NOT IN ('SYS', 'SYSTEM'))`
+			 DISK_READS,
+			 (select command_name from v$sqlcommand where s.command_type = command_type)
+			 FROM v$sqlarea s
+			 WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
