@@ -159,10 +159,10 @@ func execute(db *sql.DB, name string, c Collector, ch chan<- prometheus.Metric) 
 	var success float64 = 1
 
 	if err != nil {
-		log.Errorf("ERROR: %s collector failed after %fs: %s", name, duration.Seconds(), err)
+		log.Errorf("ERROR: metric [%s] collector failed after %fs: %s", name, duration.Seconds(), err)
 		success = 0
 	} else {
-		log.Debugf("OK: %s collector succeeded after %fs.", name, duration.Seconds())
+		log.Debugf("OK: metric [%s] collector succeeded after %fs.", name, duration.Seconds())
 	}
 
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, duration.Seconds(), name)
