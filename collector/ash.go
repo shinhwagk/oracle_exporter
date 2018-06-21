@@ -33,7 +33,7 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 		var sqlID, instID string
 		var cpu, bcpu, scheduler, userio, systemio, concurrency, application, commit, configuration, administrative, network, queueing, cluster, other float64
 
-		if err = rows.Scan(&sqlID, &instID, &cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
+		if err = rows.Scan(&instID, &sqlID, &cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
 			return err
 		}
 		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cpu, "Cpu", sqlID, instID)
