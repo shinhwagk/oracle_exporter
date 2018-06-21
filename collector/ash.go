@@ -55,19 +55,19 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 
 const ashSQL = `
 SELECT 
-	DECODE(session_state, 'ON CPU',	DECODE(session_type, 'BACKGROUND', 0, 1),	0),
-	DECODE(session_state, 'ON CPU', DECODE(session_type, 'BACKGROUND', 1, 0), 0),
-	DECODE(wait_class, 'Scheduler', 1, 0),
-	DECODE(wait_class, 'User I/O', 1, 0),
-	DECODE(wait_class, 'System I/O', 1, 0),
-	DECODE(wait_class, 'Concurrency', 1, 0),
-	DECODE(wait_class, 'Application', 1, 0),
-	DECODE(wait_class, 'Commit', 1, 0),
-	DECODE(wait_class, 'Configuration', 1, 0),
-	DECODE(wait_class, 'Administrative', 1, 0),
-	DECODE(wait_class, 'Network', 1, 0),
-	DECODE(wait_class, 'Queueing', 1, 0),
-	DECODE(wait_class, 'Cluster', 1, 0),
-	DECODE(wait_class, 'Other', 1, 0)
+	SUM(DECODE(session_state, 'ON CPU',	DECODE(session_type, 'BACKGROUND', 0, 1),	0)),
+	SUM(DECODE(session_state, 'ON CPU', DECODE(session_type, 'BACKGROUND', 1, 0), 0)),
+	SUM(DECODE(wait_class, 'Scheduler', 1, 0)),
+	SUM(DECODE(wait_class, 'User I/O', 1, 0)),
+	SUM(DECODE(wait_class, 'System I/O', 1, 0)),
+	SUM(DECODE(wait_class, 'Concurrency', 1, 0)),
+	SUM(DECODE(wait_class, 'Application', 1, 0)),
+	SUM(DECODE(wait_class, 'Commit', 1, 0)),
+	SUM(DECODE(wait_class, 'Configuration', 1, 0)),
+	SUM(DECODE(wait_class, 'Administrative', 1, 0)),
+	SUM(DECODE(wait_class, 'Network', 1, 0)),
+	SUM(DECODE(wait_class, 'Queueing', 1, 0)),
+	SUM(DECODE(wait_class, 'Cluster', 1, 0)),
+	SUM(DECODE(wait_class, 'Other', 1, 0))
 FROM v$active_session_history
 WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')`
