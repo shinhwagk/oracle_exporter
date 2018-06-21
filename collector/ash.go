@@ -7,7 +7,7 @@ import (
 )
 
 type ashCollector struct {
-	desc *prometheus.Desc
+	descs [1]*prometheus.Desc
 }
 
 func init() {
@@ -16,9 +16,10 @@ func init() {
 
 // NewASHCollector returns a new Collector exposing ash activity statistics.
 func NewASHCollector() (Collector, error) {
-	return &ashCollector{
-		newDesc("ash", "info", "Gauge metric with count of sessions by status and type", []string{"username", "machine", "type"}, nil),
-	}, nil
+	descs := [1]*prometheus.Desc{
+		newDesc("ash", "wait_class", "Gauge metric with count of sessions by status and type", []string{"class"}, nil),
+	}
+	return &ashCollector{descs}, nil
 }
 
 func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
@@ -29,23 +30,44 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var sessionType, username, machine string
-		var count float64
+		var cpu, bcpu, scheduler, userio, systemio, concurrency, application, commit, configuration, administrative, network, queueing, cluster, other float64
 
-		if err = rows.Scan(&sessionType, &username, &machine, &count); err != nil {
+		if err = rows.Scan(&cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, count, username, machine, sessionType)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cpu, "Cpu")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, bcpu, "Bcpu")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, scheduler, "Scheduler")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, userio, "User I/O")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, systemio, "System I/O")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, concurrency, "Concurrency")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, application, "Application")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, commit, "Commit")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, configuration, "Configuration")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, administrative, "Administrative")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, network, "Network")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, queueing, "Queueing")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster")
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other")
 	}
 	return nil
 }
 
 const ashSQL = `
-select session_type, username, machine, avg(cnt)
-  from (select ash.session_type, du.username, ash.machine, count(*) cnt
-          from v$active_session_history ash, dba_users du
-         where du.user_id = ash.user_id
-           and ash.SAMPLE_TIME >= trunc(sysdate, 'MI') - 1 / 24 / 60
-           and ash.SAMPLE_TIME < trunc(sysdate, 'MI')
-         group by ash.session_type, du.username, ash.machine, ash.SAMPLE_ID)
- group by session_type, username, machine`
+SELECT 
+	DECODE(session_state, 'ON CPU',	DECODE(session_type, 'BACKGROUND', 0, 1),	0),
+	DECODE(session_state, 'ON CPU', DECODE(session_type, 'BACKGROUND', 1, 0), 0),
+	DECODE(wait_class, 'Scheduler', 1, 0),
+	DECODE(wait_class, 'User I/O', 1, 0),
+	DECODE(wait_class, 'System I/O', 1, 0),
+	DECODE(wait_class, 'Concurrency', 1, 0),
+	DECODE(wait_class, 'Application', 1, 0),
+	DECODE(wait_class, 'Commit', 1, 0),
+	DECODE(wait_class, 'Configuration', 1, 0),
+	DECODE(wait_class, 'Administrative', 1, 0),
+	DECODE(wait_class, 'Network', 1, 0),
+	DECODE(wait_class, 'Queueing', 1, 0),
+	DECODE(wait_class, 'Cluster', 1, 0),
+	DECODE(wait_class, 'Other', 1, 0)
+FROM v$active_session_history
+WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')`
