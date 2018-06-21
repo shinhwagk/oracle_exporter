@@ -17,7 +17,7 @@ func init() {
 // NewASHCollector returns a new Collector exposing ash activity statistics.
 func NewASHCollector() (Collector, error) {
 	descs := [1]*prometheus.Desc{
-		newDesc("ash", "wait_class", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "inst_id"}, nil),
+		newDesc("ash", "wait_class", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "inst_id", "username"}, nil),
 	}
 	return &ashCollector{descs}, nil
 }
@@ -30,26 +30,26 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var sqlID, instID string
+		var sqlID, instID, username string
 		var cpu, bcpu, scheduler, userio, systemio, concurrency, application, commit, configuration, administrative, network, queueing, cluster, other float64
 
-		if err = rows.Scan(&instID, &sqlID, &cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
+		if err = rows.Scan(&instID, &sqlID, &username, &cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cpu, "Cpu", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, bcpu, "Bcpu", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, scheduler, "Scheduler", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, userio, "User I/O", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, systemio, "System I/O", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, concurrency, "Concurrency", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, application, "Application", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, commit, "Commit", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, configuration, "Configuration", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, administrative, "Administrative", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, network, "Network", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, queueing, "Queueing", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster", sqlID, instID)
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other", sqlID, instID)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cpu, "Cpu", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, bcpu, "Bcpu", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, scheduler, "Scheduler", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, userio, "User I/O", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, systemio, "System I/O", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, concurrency, "Concurrency", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, application, "Application", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, commit, "Commit", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, configuration, "Configuration", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, administrative, "Administrative", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, network, "Network", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, queueing, "Queueing", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster", sqlID, instID, username)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other", sqlID, instID, username)
 	}
 	return nil
 }
