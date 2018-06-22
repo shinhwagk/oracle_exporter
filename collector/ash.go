@@ -57,8 +57,8 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 const ashSQL = `
 SELECT 
 	inst_id,
-	sql_id,
-	event,
+	nvl(sql_id,'null'),
+	nvl(event,'null'),
 	(select username from dba_users where user_id = ash.user_id),
 	SUM(DECODE(session_state, 'ON CPU',	DECODE(session_type, 'BACKGROUND', 0, 1),	0)),
 	SUM(DECODE(session_state, 'ON CPU', DECODE(session_type, 'BACKGROUND', 1, 0), 0)),
