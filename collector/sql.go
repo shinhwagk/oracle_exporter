@@ -7,7 +7,7 @@ import (
 )
 
 type sqlCollector struct {
-	descs [5]*prometheus.Desc
+	descs [10]*prometheus.Desc
 }
 
 func init() {
@@ -16,12 +16,17 @@ func init() {
 
 // NewSQLCollector returns a new Collector exposing session activity statistics.
 func NewSQLCollector() (Collector, error) {
-	descs := [5]*prometheus.Desc{
-		newDesc("sql", "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
-		newDesc("sql", "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
-		newDesc("sql", "executions_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
-		newDesc("sql", "buffer_gets_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
-		newDesc("sql", "disk_read_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command"}, nil),
+	descs := [10]*prometheus.Desc{
+		newDesc("sql", "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "executions_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "buffer_gets_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "disk_read_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "sort_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "phys_read_req_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "phys_read_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "phys_write_req_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		newDesc("sql", "phys_write_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 	}
 	return &sqlCollector{descs}, nil
 }
@@ -35,29 +40,41 @@ func (c *sqlCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var sqlID, username, command_type string
-		var cpuTime, elapsedTime, executions, bufferGets, diskReads float64
-		if err := rows.Scan(&sqlID, &cpuTime, &elapsedTime, &executions, &bufferGets, &username, &diskReads, &command_type); err != nil {
+		var sqlID, username, commandType, child string
+		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, prr, prb, pwr, pwb float64
+		if err := rows.Scan(&sqlID, &cpuTime, &elapsedTime, &executions, &bufferGets, &username, &diskReads, &sort, &commandType, &child, &prr, &prb, &pwr, &pwb); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, cpuTime, username, sqlID, command_type)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, elapsedTime, username, sqlID, command_type)
-		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, executions, username, sqlID, command_type)
-		ch <- prometheus.MustNewConstMetric(c.descs[3], prometheus.CounterValue, bufferGets, username, sqlID, command_type)
-		ch <- prometheus.MustNewConstMetric(c.descs[4], prometheus.CounterValue, diskReads, username, sqlID, command_type)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, cpuTime, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, elapsedTime, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, executions, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[3], prometheus.CounterValue, bufferGets, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[4], prometheus.CounterValue, diskReads, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[5], prometheus.CounterValue, sort, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, prr, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, prb, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[8], prometheus.CounterValue, pwr, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[9], prometheus.CounterValue, pwb, username, sqlID, commandType, child)
 	}
 	return nil
 }
 
 const sqlSQL = `
-select sql_id,
-       cpu_time,
-       elapsed_time,
-       executions,
-       buffer_gets,
-       PARSING_SCHEMA_NAME,
-			 DISK_READS,
-			 (select command_name from v$sqlcommand where s.command_type = command_type)
-			 FROM v$sqlarea s
-			 WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
+select 
+	SQL_ID,
+	CPU_TIME,
+	ELAPSED_TIME,
+	EXECUTIONS,
+	BUFFER_GETS,
+	PARSING_SCHEMA_NAME,
+	DISK_READS,
+	SORTS
+	(select command_name from v$sqlcommand where s.command_type = command_type),
+	CHILD_NUMBER,
+	PHYSICAL_READ_REQUESTS,
+	PHYSICAL_READ_BYTES,
+	PHYSICAL_WRITE_REQUESTS,
+	PHYSICAL_WRITE_BYTES
+FROM v$sql s
+WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`

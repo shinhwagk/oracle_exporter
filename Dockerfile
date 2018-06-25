@@ -24,9 +24,8 @@ RUN go get gopkg.in/alecthomas/kingpin.v2
 RUN go get gopkg.in/goracle.v2
 
 WORKDIR /opt
+ENTRYPOINT [ "./oracle_exporter" ]
 
-ENTRYPOINT [ "./entrypoint.sh" ]
-
-ADD entrypoint.sh      /opt/entrypoint.sh
-RUN chmod +x entrypoint.sh
 ADD oracle_exporter.go /opt/oracle_exporter.go
+RUN go get github.com/shinhwagk/oracle_exporter/collector
+RUN go build -o oracle_exporter
