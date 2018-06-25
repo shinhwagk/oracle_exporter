@@ -69,7 +69,7 @@ select
 	BUFFER_GETS,
 	PARSING_SCHEMA_NAME,
 	DISK_READS,
-	SORTS
+	SORTS,
 	(select command_name from v$sqlcommand where s.command_type = command_type),
 	CHILD_NUMBER,
 	PHYSICAL_READ_REQUESTS,
