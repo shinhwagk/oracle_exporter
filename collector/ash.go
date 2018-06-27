@@ -52,8 +52,6 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, queueing, "Queueing", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other", sqlID, username, event, opname)
-		} else {
-			ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, float64(1), sqlID, username, opname, sessionType)
 		}
 	}
 	return nil
