@@ -43,4 +43,8 @@ func (c *sysEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) erro
 	return nil
 }
 
-const sysEventSQL = `SELECT event, total_waits, time_waited_micro, wait_class FROM v$system_event`
+const sysEventSQL = `
+SELECT n.wait_class, e.event NAME, e.total_waits, e.time_waited_micro
+  FROM v$system_event e, v$event_name n
+ WHERE n.name = e.event
+   AND time_waited > 0`

@@ -11,7 +11,7 @@ type tableCollector struct {
 }
 
 func init() {
-	// registerCollector("table", cHour, defaultEnabled, NewTableCollector)
+	registerCollector("table", cHour, defaultEnabled, NewTableCollector)
 }
 
 // NewTableCollector returns a new Collector exposing session activity statistics.

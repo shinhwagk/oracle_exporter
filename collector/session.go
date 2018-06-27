@@ -11,7 +11,7 @@ type sessionCollector struct {
 }
 
 func init() {
-	// registerCollector("session", cMin, defaultEnabled, NewSessionCollector)
+	registerCollector("session", cMin, defaultEnabled, NewSessionCollector)
 }
 
 // NewSessionCollector returns a new Collector exposing session activity statistics.
