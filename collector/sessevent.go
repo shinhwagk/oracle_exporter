@@ -51,7 +51,7 @@ SELECT ss.sid,
        se.event,
        sum(se.total_waits),
 			 sum(se.time_waited_micro),
-			 sum(se.TOTAL_TIMEOUTS)
+			 sum(se.TOTAL_TIMEOUTS),
        se.wait_class
   FROM v$session_event se, v$session ss
  where ss.sid = se.sid
