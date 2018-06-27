@@ -73,9 +73,9 @@ SELECT name,
               'SQL',
               128,
               'Debug',
-              'Null') class
+              'null') class
   FROM v$sysstat
- WHERE AND sn.name IN ('parse count (total)',
+ WHERE sn.name IN ('parse count (total)',
                     'execute count',
                     'user commits',
                     'user rollbacks',
