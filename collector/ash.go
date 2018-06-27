@@ -17,7 +17,7 @@ func init() {
 // NewASHCollector returns a new Collector exposing ash activity statistics.
 func NewASHCollector() (Collector, error) {
 	descs := [2]*prometheus.Desc{
-		newDesc("ash", "waitting", "Gauge metric with count of sessions by status and type", []string{"sql_id", "username", "event", "opname"}, nil),
+		newDesc("ash", "waitting", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "username", "event", "opname"}, nil),
 		newDesc("ash", "on_cpu", "Gauge metric with count of sessions by status and type", []string{"sql_id", "username", "opname", "type"}, nil),
 	}
 	return &ashCollector{descs}, nil
@@ -62,7 +62,6 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 const ashSQL = `
 SELECT
 	session_state,
-	inst_id,
 	nvl(sql_id,'null'),
 	nvl(event,'null'),
 	SQL_OPNAME,
@@ -84,4 +83,4 @@ SELECT
 	SUM(DECODE(wait_class, 'Other', 1, 0))
 FROM gv$active_session_history ash
 WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')
-group by nvl(sql_id, 'null'), user_id, inst_id, nvl(event,'null'), SQL_OPNAME, session_state, SESSION_TYPE`
+group by nvl(sql_id, 'null'), user_id, nvl(event,'null'), SQL_OPNAME, session_state, SESSION_TYPE`
