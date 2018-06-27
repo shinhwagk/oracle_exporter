@@ -2,12 +2,13 @@ package collector
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type sysstatCollector struct {
-	desc *prometheus.Desc
+	descs map[string]*prometheus.Desc
 }
 
 func init() {
@@ -16,8 +17,14 @@ func init() {
 
 // NewSysstatCollector returns a new Collector exposing session activity statistics.
 func NewSysstatCollector() (Collector, error) {
-	desc := newDesc("sysstat", "", "Generic counter metric from v$sysstat view in Oracle.", []string{"name", "class"}, nil)
-	return &sysstatCollector{desc}, nil
+	descs := make(map[string]*prometheus.Desc)
+	descs["user commits"] = newDesc("sesstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["user rollbacks"] = newDesc("sesstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["execute count"] = newDesc("sesstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse count (total)"] = newDesc("sesstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["DB time"] = newDesc("sesstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["redo size"] = newDesc("sesstat", "redo_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	return &sysstatCollector{descs}, nil
 }
 
 func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
@@ -34,7 +41,14 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, value, name, class)
+		desc, ok := c.descs[name]
+
+		if ok {
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, value)
+		} else {
+			return errors.New("sesstat desc no exist")
+		}
+
 	}
 	return nil
 }
@@ -60,4 +74,10 @@ SELECT name,
               128,
               'Debug',
               'Null') class
-  FROM v$sysstat`
+  FROM v$sysstat
+ WHERE AND sn.name IN ('parse count (total)',
+                    'execute count',
+                    'user commits',
+                    'user rollbacks',
+                    'DB time',
+                    'redo size')`
