@@ -51,4 +51,4 @@ SELECT ss.sid,
        sum(se.time_waited_micro),
        se.wait_class
   FROM v$session_event se, v$session ss
- where ss.sid = se.sid group by ss.username, se.event, se.wait_class`
+ where ss.sid = se.sid group by ss.sid, ss.username, se.event, se.wait_class`
