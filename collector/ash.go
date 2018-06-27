@@ -17,7 +17,7 @@ func init() {
 // NewASHCollector returns a new Collector exposing ash activity statistics.
 func NewASHCollector() (Collector, error) {
 	descs := [2]*prometheus.Desc{
-		newDesc("ash", "waitting", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "username", "event", "opname"}, nil),
+		newDesc("ash", "waitting", "Gauge metric with count of sessions by status and type", []string{"sql_id", "username", "event", "opname"}, nil),
 		newDesc("ash", "on_cpu", "Gauge metric with count of sessions by status and type", []string{"sql_id", "username", "opname", "type"}, nil),
 	}
 	return &ashCollector{descs}, nil
@@ -53,7 +53,7 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other", sqlID, username, event, opname)
 		} else {
-			ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, 1, sqlID, username, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, float64(1), sqlID, username, opname, sessionType)
 		}
 	}
 	return nil
