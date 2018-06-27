@@ -31,20 +31,20 @@ func (c *sysEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) erro
 	defer rows.Close()
 
 	for rows.Next() {
-		var name, waitClass string
-		var waits, timeWaited float64
-		if err := rows.Scan(&name, &waits, &timeWaited, &waitClass); err != nil {
+		var event, waitClass string
+		var waits, time float64
+		if err := rows.Scan(&waitClass, &event, &waits, &time); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, name, waitClass)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeWaited, name, waitClass)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, event, waitClass)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, time, event, waitClass)
 	}
 	return nil
 }
 
 const sysEventSQL = `
-SELECT n.wait_class, e.event NAME, e.total_waits, e.time_waited_micro
+SELECT n.wait_class, e.event, e.total_waits, e.time_waited_micro
   FROM v$system_event e, v$event_name n
  WHERE n.name = e.event
    AND time_waited > 0`

@@ -34,7 +34,7 @@ func (c *sessEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) err
 	for rows.Next() {
 		var username, event, waitClass, sid string
 		var waits, timeWaited, timeOut float64
-		if err := rows.Scan(&sid, &username, &event, &waits, &timeWaited, &timeOut, &waitClass); err != nil {
+		if err := rows.Scan(&sid, &username, &event, &waitClass, &waits, &timeWaited, &timeOut); err != nil {
 			return err
 		}
 
@@ -48,11 +48,11 @@ func (c *sessEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) err
 const sessEventSQL = `
 SELECT ss.sid,
        ss.username,
-       se.event,
+			 se.event,
+			 se.wait_class,
        sum(se.total_waits),
 			 sum(se.time_waited_micro),
-			 sum(se.TOTAL_TIMEOUTS),
-       se.wait_class
+			 sum(se.TOTAL_TIMEOUTS)
   FROM v$session_event se, v$session ss
  where ss.sid = se.sid
    and se.total_waits > 0
