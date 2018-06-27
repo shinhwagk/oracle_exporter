@@ -32,15 +32,15 @@ func (c *sessEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) err
 	defer rows.Close()
 
 	for rows.Next() {
-		var username, event, waitClass, sid string
+		var username, event, class, sid string
 		var waits, timeWaited, timeOut float64
-		if err := rows.Scan(&sid, &username, &event, &waitClass, &waits, &timeWaited, &timeOut); err != nil {
+		if err := rows.Scan(&sid, &username, &event, &class, &waits, &timeWaited, &timeOut); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, username, event, waitClass, sid)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeWaited, username, event, waitClass, sid)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeOut, username, event, waitClass, sid)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, username, event, class, sid)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeWaited, username, event, class, sid)
+		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, timeOut, username, event, class, sid)
 	}
 	return nil
 }
