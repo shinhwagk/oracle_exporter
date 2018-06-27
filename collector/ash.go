@@ -34,7 +34,7 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 		var ss, sqlID, username, event, opname, sessionType string
 		var cpu, bcpu, scheduler, userio, systemio, concurrency, application, commit, configuration, administrative, network, queueing, cluster, other float64
 
-		if err = rows.Scan(&ss, &sqlID, &event, &opname, &username, &sessionType, &cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
+		if err = rows.Scan(&ss, &sqlID, &event, &opname, &sessionType, &username, &cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
 			return err
 		}
 		if ss == "WATTING" {
