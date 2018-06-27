@@ -40,7 +40,9 @@ func (c *sessEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) err
 
 		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, username, event, class, sid)
 		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeWaited, username, event, class, sid)
-		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, timeOut, username, event, class, sid)
+		if timeOut > 0 {
+			ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, timeOut, username, event, class, sid)
+		}
 	}
 	return nil
 }
