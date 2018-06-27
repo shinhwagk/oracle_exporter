@@ -26,6 +26,7 @@ RUN go get gopkg.in/goracle.v2
 WORKDIR /opt
 ENTRYPOINT [ "./oracle_exporter" ]
 
+ADD no-cache .
 ADD oracle_exporter.go /opt/oracle_exporter.go
 RUN go get github.com/shinhwagk/oracle_exporter/collector
 RUN go build -o oracle_exporter
