@@ -73,4 +73,4 @@ select SQL_ID,
        SORTS,
        EXECUTIONS
   FROM v$sql s
- WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
+ WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'`
