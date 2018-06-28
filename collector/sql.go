@@ -42,7 +42,7 @@ func (c *sqlCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	for rows.Next() {
 		var sqlID, username, commandType, child string
 		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, prr, prb, pwr, pwb float64
-		if err := rows.Scan(&sqlID, &cpuTime, &elapsedTime, &executions, &bufferGets, &username, &diskReads, &sort, &commandType, &child, &prr, &prb, &pwr, &pwb); err != nil {
+		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &prr, &prb, &pwr, &pwb); err != nil {
 			return err
 		}
 
@@ -61,20 +61,19 @@ func (c *sqlCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 }
 
 const sqlSQL = `
-select 
-	SQL_ID,
-	CPU_TIME,
-	ELAPSED_TIME,
-	EXECUTIONS,
-	BUFFER_GETS,
-	PARSING_SCHEMA_NAME,
-	DISK_READS,
-	SORTS,
-	(select command_name from v$sqlcommand where s.command_type = command_type),
-	CHILD_NUMBER,
-	PHYSICAL_READ_REQUESTS,
-	PHYSICAL_READ_BYTES,
-	PHYSICAL_WRITE_REQUESTS,
-	PHYSICAL_WRITE_BYTES
-FROM v$sql s
-WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
+select SQL_ID,
+			 CHILD_NUMBER,
+			 (select command_name from v$sqlcommand where s.command_type = command_type),
+			 PARSING_SCHEMA_NAME,
+       CPU_TIME,
+			 ELAPSED_TIME,
+			 BUFFER_GETS,
+       DISK_READS,
+       SORTS,
+       EXECUTIONS,
+       PHYSICAL_READ_REQUESTS,
+       PHYSICAL_READ_BYTES,
+       PHYSICAL_WRITE_REQUESTS,
+       PHYSICAL_WRITE_BYTES
+  FROM v$sql s
+ WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
