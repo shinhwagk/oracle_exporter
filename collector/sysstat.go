@@ -18,12 +18,12 @@ func init() {
 // NewSysstatCollector returns a new Collector exposing session activity statistics.
 func NewSysstatCollector() (Collector, error) {
 	descs := make(map[string]*prometheus.Desc)
-	descs["user commits"] = newDesc("sesstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["user rollbacks"] = newDesc("sesstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["execute count"] = newDesc("sesstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["parse count (total)"] = newDesc("sesstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["DB time"] = newDesc("sesstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["redo size"] = newDesc("sesstat", "redo_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["user commits"] = newDesc("sysstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["user rollbacks"] = newDesc("sysstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["execute count"] = newDesc("sysstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse count (total)"] = newDesc("sysstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["DB time"] = newDesc("sysstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["redo size"] = newDesc("sysstat", "redo_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	return &sysstatCollector{descs}, nil
 }
 
