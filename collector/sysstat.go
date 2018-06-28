@@ -46,7 +46,7 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 		if ok {
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, value, name, class)
 		} else {
-			return errors.New("sesstat desc no exist")
+			return errors.New("sysstat desc no exist")
 		}
 
 	}

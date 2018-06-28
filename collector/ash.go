@@ -79,6 +79,6 @@ SELECT
 	SUM(DECODE(wait_class, 'Queueing', 1, 0)),
 	SUM(DECODE(wait_class, 'Cluster', 1, 0)),
 	SUM(DECODE(wait_class, 'Other', 1, 0))
-FROM gv$active_session_history ash
+FROM v$active_session_history ash
 WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')
 group by nvl(sql_id, 'null'), user_id, nvl(event,'null'), SQL_OPNAME, session_state, SESSION_TYPE`

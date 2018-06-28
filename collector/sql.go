@@ -23,10 +23,10 @@ func NewSQLCollector() (Collector, error) {
 		newDesc("sql", "buffer_gets_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		newDesc("sql", "disk_read_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		newDesc("sql", "sort_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		newDesc("sql", "phys_read_req_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		newDesc("sql", "phys_read_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		newDesc("sql", "phys_write_req_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		newDesc("sql", "phys_write_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		// newDesc("sql", "phys_read_req_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		// newDesc("sql", "phys_read_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		// newDesc("sql", "phys_write_req_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		// newDesc("sql", "phys_write_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 	}
 	return &sqlCollector{descs}, nil
 }
@@ -41,8 +41,8 @@ func (c *sqlCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 
 	for rows.Next() {
 		var sqlID, username, commandType, child string
-		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, prr, prb, pwr, pwb float64
-		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &prr, &prb, &pwr, &pwb); err != nil {
+		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort float64
+		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions); err != nil {
 			return err
 		}
 
@@ -52,10 +52,10 @@ func (c *sqlCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 		ch <- prometheus.MustNewConstMetric(c.descs[3], prometheus.CounterValue, bufferGets, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[4], prometheus.CounterValue, diskReads, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[5], prometheus.CounterValue, sort, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, prr, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, prb, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[8], prometheus.CounterValue, pwr, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[9], prometheus.CounterValue, pwb, username, sqlID, commandType, child)
+		// ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, prr, username, sqlID, commandType, child)
+		// ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, prb, username, sqlID, commandType, child)
+		// ch <- prometheus.MustNewConstMetric(c.descs[8], prometheus.CounterValue, pwr, username, sqlID, commandType, child)
+		// ch <- prometheus.MustNewConstMetric(c.descs[9], prometheus.CounterValue, pwb, username, sqlID, commandType, child)
 	}
 	return nil
 }
@@ -70,10 +70,6 @@ select SQL_ID,
 			 BUFFER_GETS,
        DISK_READS,
        SORTS,
-       EXECUTIONS,
-       PHYSICAL_READ_REQUESTS,
-       PHYSICAL_READ_BYTES,
-       PHYSICAL_WRITE_REQUESTS,
-       PHYSICAL_WRITE_BYTES
+       EXECUTIONS
   FROM v$sql s
  WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
