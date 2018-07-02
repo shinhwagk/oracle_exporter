@@ -103,5 +103,7 @@ select swc.sid,
 from V$SESSION_WAIT_CLASS swc, v$session s
 where swc.sid = s.sid
 and swc.serial# = s.serial#
-and s.username is not null`
+and s.username is not null
+and swc.wait_class <> 'Idle'
+and swc.TOTAL_WAITS > 0`
 )
