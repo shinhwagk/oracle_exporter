@@ -37,7 +37,7 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 		if err = rows.Scan(&ss, &sqlID, &event, &opname, &sessionType, &username, &cpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
 			return err
 		}
-		if ss == "WATTING" {
+		if ss == "WAITING" {
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, scheduler, "Scheduler", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, userio, "User I/O", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, systemio, "System I/O", sqlID, username, event, opname)
@@ -60,7 +60,7 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 const ashSQL = `
 SELECT
 	session_state,
-	nvl(sql_id,'null'),
+	sql_id,
 	nvl(event,'null'),
 	SQL_OPNAME,
 	SESSION_TYPE,
@@ -79,5 +79,5 @@ SELECT
 	SUM(DECODE(wait_class, 'Cluster', 1, 0)),
 	SUM(DECODE(wait_class, 'Other', 1, 0))
 FROM v$active_session_history ash
-WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI') AND sql_id is not null
-group by nvl(sql_id, 'null'), user_id, nvl(event,'null'), SQL_OPNAME, session_state, SESSION_TYPE`
+WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI') AND sql_id is not null AND user_id is not null
+group by sql_id, user_id, nvl(event,'null'), SQL_OPNAME, session_state, SESSION_TYPE`
