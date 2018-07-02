@@ -29,6 +29,7 @@ func NewSessEventCollector() (Collector, error) {
 	return &sessEventCollector{descs}, nil
 }
 
+// NewSessClassCollector returns a new Collector exposing session activity statistics.
 func NewSessClassCollector() (Collector, error) {
 	descs := [2]*prometheus.Desc{
 		newDesc("sessclass", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"username", "serial", "class", "sid"}, nil),
@@ -89,7 +90,8 @@ SELECT ss.sid,
 			 sum(se.TOTAL_TIMEOUTS)
   FROM v$session_event se, v$session ss
  where ss.sid = se.sid
-   and se.total_waits > 0
+	 and se.total_waits > 0
+	 and se.wait_class <> 'Idle'
    and ss.username is not null
  group by ss.sid, ss.username, se.event, se.wait_class`
 

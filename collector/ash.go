@@ -17,8 +17,8 @@ func init() {
 // NewASHCollector returns a new Collector exposing ash activity statistics.
 func NewASHCollector() (Collector, error) {
 	descs := [2]*prometheus.Desc{
-		newDesc("ash", "waitting", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "username", "event", "opname"}, nil),
-		newDesc("ash", "on_cpu", "Gauge metric with count of sessions by status and type", []string{"sql_id", "username", "opname", "type"}, nil),
+		newDesc("ash", "waitting", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "username", "event", "opname", "stype"}, nil),
+		newDesc("ash", "on_cpu", "Gauge metric with count of sessions by status and type", []string{"sql_id", "username", "opname", "stype"}, nil),
 	}
 	return &ashCollector{descs}, nil
 }
@@ -32,14 +32,12 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 
 	for rows.Next() {
 		var ss, sqlID, username, event, opname, sessionType string
-		var cpu, bcpu, scheduler, userio, systemio, concurrency, application, commit, configuration, administrative, network, queueing, cluster, other float64
+		var cpu, scheduler, userio, systemio, concurrency, application, commit, configuration, administrative, network, queueing, cluster, other float64
 
-		if err = rows.Scan(&ss, &sqlID, &event, &opname, &sessionType, &username, &cpu, &bcpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
+		if err = rows.Scan(&ss, &sqlID, &event, &opname, &sessionType, &username, &cpu, &scheduler, &userio, &systemio, &concurrency, &application, &commit, &configuration, &administrative, &network, &queueing, &cluster, &other); err != nil {
 			return err
 		}
 		if ss == "WATTING" {
-			// ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cpu, "Cpu", sqlID, username, event, opname)
-			// ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, bcpu, "Bcpu", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, scheduler, "Scheduler", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, userio, "User I/O", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, systemio, "System I/O", sqlID, username, event, opname)
@@ -52,6 +50,8 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, queueing, "Queueing", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster", sqlID, username, event, opname)
 			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other", sqlID, username, event, opname)
+		} else {
+			ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, cpu, sqlID, username, opname, sessionType)
 		}
 	}
 	return nil
@@ -65,8 +65,7 @@ SELECT
 	SQL_OPNAME,
 	SESSION_TYPE,
 	(select username from dba_users where user_id = ash.user_id),
-	SUM(DECODE(session_state, 'ON CPU',	DECODE(session_type, 'BACKGROUND', 0, 1),	0)),
-	SUM(DECODE(session_state, 'ON CPU', DECODE(session_type, 'BACKGROUND', 1, 0), 0)),
+	SUM(DECODE(session_state, 'ON CPU',	1,	0)),
 	SUM(DECODE(wait_class, 'Scheduler', 1, 0)),
 	SUM(DECODE(wait_class, 'User I/O', 1, 0)),
 	SUM(DECODE(wait_class, 'System I/O', 1, 0)),
