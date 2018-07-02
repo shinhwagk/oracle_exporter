@@ -79,5 +79,5 @@ SELECT
 	SUM(DECODE(wait_class, 'Cluster', 1, 0)),
 	SUM(DECODE(wait_class, 'Other', 1, 0))
 FROM v$active_session_history ash
-WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')
+WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 AND SAMPLE_TIME < TRUNC(sysdate, 'MI') AND sql_id is not null
 group by nvl(sql_id, 'null'), user_id, nvl(event,'null'), SQL_OPNAME, session_state, SESSION_TYPE`
