@@ -68,7 +68,7 @@ func (c *sysClassCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) erro
 	for rows.Next() {
 		var class string
 		var waits, time, waitspg, timepg float64
-		if err := rows.Scan(&class, &waits, &time, &waitspg, timepg); err != nil {
+		if err := rows.Scan(&class, &waits, &time, &waitspg, &timepg); err != nil {
 			return err
 		}
 
