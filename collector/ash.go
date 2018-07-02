@@ -17,7 +17,7 @@ func init() {
 // NewASHCollector returns a new Collector exposing ash activity statistics.
 func NewASHCollector() (Collector, error) {
 	descs := [2]*prometheus.Desc{
-		newDesc("ash", "waitting", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "username", "event", "opname", "stype"}, nil),
+		newDesc("ash", "waiting", "Gauge metric with count of sessions by status and type", []string{"class", "sql_id", "username", "event", "opname", "stype"}, nil),
 		newDesc("ash", "on_cpu", "Gauge metric with count of sessions by status and type", []string{"sql_id", "username", "opname", "stype"}, nil),
 	}
 	return &ashCollector{descs}, nil
@@ -38,18 +38,18 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 			return err
 		}
 		if ss == "WAITING" {
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, scheduler, "Scheduler", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, userio, "User I/O", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, systemio, "System I/O", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, concurrency, "Concurrency", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, application, "Application", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, commit, "Commit", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, configuration, "Configuration", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, administrative, "Administrative", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, network, "Network", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, queueing, "Queueing", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster", sqlID, username, event, opname)
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other", sqlID, username, event, opname)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, scheduler, "Scheduler", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, userio, "User I/O", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, systemio, "System I/O", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, concurrency, "Concurrency", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, application, "Application", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, commit, "Commit", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, configuration, "Configuration", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, administrative, "Administrative", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, network, "Network", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, queueing, "Queueing", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cluster, "Cluster", sqlID, username, event, opname, sessionType)
+			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, other, "Other", sqlID, username, event, opname, sessionType)
 		} else {
 			ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.GaugeValue, cpu, sqlID, username, opname, sessionType)
 		}
