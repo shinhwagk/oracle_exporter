@@ -16,7 +16,7 @@ type sysClassCollector struct {
 
 func init() {
 	registerCollector("systemEvent", cMin, defaultEnabled, NewSysEventCollector)
-	registerCollector("systemClass", cMin, defaultEnabled, NewSysClassCollector)
+	// registerCollector("systemClass", cMin, defaultEnabled, NewSysClassCollector)
 }
 
 // NewSysEventCollector returns a new Collector exposing session activity statistics.
