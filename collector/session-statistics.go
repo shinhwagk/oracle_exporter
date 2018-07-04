@@ -53,39 +53,42 @@ func (c *sesstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
 
 const sesstatSQL = `
-select sid, serial#, username, name, class, sum(VALUE)
-  from (SELECT s.sid,
-               s.serial#,
-               sn.name,
-               s.USERNAME,
-               ss.VALUE,
-               decode(sn.class,
-                      1,
-                      'User',
-                      2,
-                      'Read',
-                      4,
-                      'Enqueue',
-                      8,
-                      'Cache',
-                      16,
-                      'OS',
-                      32,
-                      'Real Application Clusters',
-                      64,
-                      'SQL',
-                      128,
-                      'Debug',
-                      'null') class
-          FROM v$sesstat ss, v$statname sn, v$session s
-         WHERE s.sid = ss.SID
-           AND ss.STATISTIC# = sn.STATISTIC#
-           AND s.username is not null
-           AND ss.value > 0
-           AND sn.name IN ('parse count (total)',
-                           'execute count',
-                           'user commits',
-                           'user rollbacks',
-                           'DB time',
-                           'redo size'))
- group by username, serial#, NAME, sid, class`
+SELECT s.sid,
+       s.serial#,
+       sn.name,
+       s.username,
+       ss.value,
+       decode(sn.class,
+              1,
+              'User',
+              2,
+              'Read',
+              4,
+              'Enqueue',
+              8,
+              'Cache',
+              16,
+              'OS',
+              32,
+              'Real Application Clusters',
+              64,
+              'SQL',
+              128,
+              'Debug',
+              'null') class
+  FROM v$sesstat ss, v$statname sn, v$session s
+ WHERE s.sid = ss.sid
+   AND ss.STATISTIC# = sn.STATISTIC#
+   AND s.username IS NOT NULL
+   AND ss.value > 0
+   AND sn.name IN ('parse count (total)',
+                   'parse count (hard)',
+                   'parse count (failures)',
+                   'parse count (describe)',
+                   'parse time cpu',
+                   'parse time elapsed',
+                   'execute count',
+                   'user commits',
+                   'user rollbacks',
+                   'DB time',
+                   'redo size')`
