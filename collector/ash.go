@@ -48,6 +48,7 @@ select sample_id,
        nvl(sql_id, 'null'),
        nvl(sql_opname, 'null'),
        nvl(Program,'null'),
-       nvl(machine,'null')
+			 nvl(machine,'null'),
+			 nvl(blocking_session,'null')
   from v$active_session_history ash
  where SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')`

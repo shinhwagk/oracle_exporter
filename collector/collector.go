@@ -54,6 +54,7 @@ func registerCollector(collector string, cycle string, isDefaultEnabled bool, fa
 	flagHelp := fmt.Sprintf("Enable the %s collector (default: %s).", collector, helpDefaultState)
 	defaultValue := fmt.Sprintf("%v", isDefaultEnabled)
 	flag := kingpin.Flag(flagName, flagHelp).Default(defaultValue).Bool()
+
 	if cycle == cMin {
 		collectorStateMinute[collector] = flag
 		factoriesMinute[collector] = factory
