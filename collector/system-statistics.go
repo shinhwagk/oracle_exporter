@@ -24,6 +24,11 @@ func NewSysstatCollector() (Collector, error) {
 	descs["parse count (total)"] = newDesc("sysstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	descs["DB time"] = newDesc("sysstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	descs["redo size"] = newDesc("sysstat", "redo_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse count (hard)"] = newDesc("sysstat", "parse_hard_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse count (failures)"] = newDesc("sysstat", "parse_failures_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse count (describe)"] = newDesc("sysstat", "parse_describe_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse time cpu"] = newDesc("sysstat", "parse_time_cpu_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse time elapsed"] = newDesc("sysstat", "parse_time_elapsed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	return &sysstatCollector{descs}, nil
 }
 
@@ -66,6 +71,11 @@ SELECT name,
               					'Debug', 'null') class
   FROM v$sysstat
  WHERE name IN ('parse count (total)',
+								'parse count (hard)',
+								'parse count (failures)',
+								'parse count (describe)',
+								'parse time cpu',
+								'parse time elapsed',
 								'execute count',
 								'user commits',
 								'user rollbacks',
