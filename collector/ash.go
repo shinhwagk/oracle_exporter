@@ -28,9 +28,9 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer rows.Close()
 
 	for rows.Next() {
-		var sei, si, ssi, e, st, u, sli, so, p, m string
+		var sei, si, ssi, e, st, u, sli, so, p, m, bs string
 
-		if err = rows.Scan(&sei, &si, &ssi, &e, &st, &u, &sli, &so, &p, &m); err != nil {
+		if err = rows.Scan(&sei, &si, &ssi, &e, &st, &u, &sli, &so, &p, &m, &bs); err != nil {
 			return err
 		}
 		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, float64(1), sei, si, ssi, e, st, u, sli, so, p, m)

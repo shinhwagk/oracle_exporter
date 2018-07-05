@@ -70,6 +70,7 @@ func main() {
 	log.Infoln("Starting oracle_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
+	// This instance is only used to check collector creation and logging.
 	nc, err := collector.NewOracleCollector()
 	if err != nil {
 		log.Fatalf("Couldn't create collector: %s", err)

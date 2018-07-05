@@ -76,7 +76,7 @@ SELECT s.sid,
               128,
               'Debug',
               'null'),
-       ss.value,
+       ss.value
   FROM v$sesstat ss, v$statname sn, v$session s
  WHERE s.sid = ss.sid
    AND ss.STATISTIC# = sn.STATISTIC#
