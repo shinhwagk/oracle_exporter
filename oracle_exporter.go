@@ -70,7 +70,7 @@ func main() {
 	log.Infoln("Starting oracle_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	nc, err := collector.NewNodeCollector()
+	nc, err := collector.NewOracleCollector()
 	if err != nil {
 		log.Fatalf("Couldn't create collector: %s", err)
 	}
@@ -96,7 +96,7 @@ func main() {
 	})
 
 	log.Infoln("Listening on", *listenAddress)
-	err := http.ListenAndServe(*listenAddress, nil)
+	err = http.ListenAndServe(*listenAddress, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

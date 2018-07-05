@@ -28,6 +28,7 @@ func NewSysEventCollector() (Collector, error) {
 	return &sysEventCollector{descs}, nil
 }
 
+// NewSysClassCollector returns a new Collector exposing session activity statistics.
 func NewSysClassCollector() (Collector, error) {
 	descs := [4]*prometheus.Desc{
 		newDesc("sysclass", "waits_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
