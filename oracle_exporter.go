@@ -90,7 +90,7 @@ func main() {
 			<head><title>Oracle Exporter</title></head>
 			<body>
 			<h1>Oracle Exporter</h1>
-			<p><a href="/metric">Metrics</a></p>
+			<p><a href="` + *metricsPath + `">Metrics</a></p>
 			</body>
 			</html>`))
 	})
