@@ -15,7 +15,7 @@ type sysClassCollector struct {
 }
 
 func init() {
-	registerCollector("systemEvent", cMin, defaultEnabled, NewSysEventCollector)
+	registerCollector("systemEvent", defaultEnabled, NewSysEventCollector)
 	// registerCollector("systemClass", cMin, defaultEnabled, NewSysClassCollector)
 }
 

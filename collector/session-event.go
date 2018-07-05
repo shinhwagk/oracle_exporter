@@ -15,7 +15,7 @@ type sessClassCollector struct {
 }
 
 func init() {
-	registerCollector("sessionEvent", cMin, defaultEnabled, NewSessEventCollector)
+	registerCollector("sessionEvent", defaultEnabled, NewSessEventCollector)
 	// registerCollector("sessionClass", cMin, defaultEnabled, NewSessClassCollector)
 }
 

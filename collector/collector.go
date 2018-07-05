@@ -19,30 +19,17 @@ var (
 	oracleUpDesc       = newDesc("", "up", "oracle_exporter: Whether the Oracle server is up.", nil, nil)
 )
 
-// func warnDeprecated(collector string) {
-// 	log.Warnf("The %s collector is deprecated and will be removed in the future!", collector)
-// }
-
 const (
 	defaultEnabled  = true
 	defaultDisabled = false
-	cHour           = "h"
-	cMin            = "m"
-	cDay            = "d"
 )
 
 var (
-	factoriesMinute      = make(map[string]func() (Collector, error))
-	collectorStateMinute = make(map[string]*bool)
-	factoriesHour        = make(map[string]func() (Collector, error))
-	collectorStateHour   = make(map[string]*bool)
-	factoriesDay         = make(map[string]func() (Collector, error))
-	collectorStateDay    = make(map[string]*bool)
-	factoriesAll         = make(map[string]func() (Collector, error))
-	collectorStateAll    = make(map[string]*bool)
+	factories      = make(map[string]func() (Collector, error))
+	collectorState = make(map[string]*bool)
 )
 
-func registerCollector(collector string, cycle string, isDefaultEnabled bool, factory func() (Collector, error)) {
+func registerCollector(collector string, isDefaultEnabled bool, factory func() (Collector, error)) {
 	var helpDefaultState string
 	if isDefaultEnabled {
 		helpDefaultState = "enabled"
@@ -53,21 +40,11 @@ func registerCollector(collector string, cycle string, isDefaultEnabled bool, fa
 	flagName := fmt.Sprintf("collector.%s", collector)
 	flagHelp := fmt.Sprintf("Enable the %s collector (default: %s).", collector, helpDefaultState)
 	defaultValue := fmt.Sprintf("%v", isDefaultEnabled)
+
 	flag := kingpin.Flag(flagName, flagHelp).Default(defaultValue).Bool()
+	collectorState[collector] = flag
 
-	if cycle == cMin {
-		collectorStateMinute[collector] = flag
-		factoriesMinute[collector] = factory
-	} else if cycle == cHour {
-		collectorStateHour[collector] = flag
-		factoriesHour[collector] = factory
-	} else if cycle == cDay {
-		collectorStateDay[collector] = flag
-		factoriesDay[collector] = factory
-	}
-
-	collectorStateAll[collector] = flag
-	factoriesAll[collector] = factory
+	factories[collector] = factory
 }
 
 // OracleCollector implements the prometheus.Collector interface.
@@ -76,19 +53,7 @@ type oracleCollector struct {
 }
 
 // NewOracleCollector creates a new OracleCollector
-func NewOracleCollector(cycle string, filters ...string) (*oracleCollector, error) {
-	if cycle == cMin {
-		return NewOracleCollectorByCycle(factoriesMinute, collectorStateMinute, filters)
-	} else if cycle == cHour {
-		return NewOracleCollectorByCycle(factoriesHour, collectorStateHour, filters)
-	} else if cycle == cDay {
-		return NewOracleCollectorByCycle(factoriesDay, collectorStateDay, filters)
-	} else {
-		return NewOracleCollectorByCycle(factoriesAll, collectorStateAll, filters)
-	}
-}
-
-func NewOracleCollectorByCycle(factories map[string]func() (Collector, error), collectorState map[string]*bool, filters []string) (*oracleCollector, error) {
+func NewOracleCollector(filters ...string) (*oracleCollector, error) {
 	f := make(map[string]bool)
 	for _, filter := range filters {
 		enabled, exist := collectorState[filter]
@@ -177,4 +142,13 @@ type Collector interface {
 
 func newDesc(subsystem string, name string, help string, vls []string, cls prometheus.Labels) *prometheus.Desc {
 	return prometheus.NewDesc(prometheus.BuildFQName(namespace, subsystem, name), help, vls, cls)
+}
+
+type typedDesc struct {
+	desc      *prometheus.Desc
+	valueType prometheus.ValueType
+}
+
+func (d *typedDesc) mustNewConstMetric(value float64, labels ...string) prometheus.Metric {
+	return prometheus.MustNewConstMetric(d.desc, d.valueType, value, labels...)
 }

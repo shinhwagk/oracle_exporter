@@ -11,7 +11,7 @@ type tablespaceCollector struct {
 }
 
 func init() {
-	registerCollector("tablespace", cHour, defaultEnabled, NewTabalespaceCollector)
+	registerCollector("tablespace", defaultEnabled, NewTabalespaceCollector)
 }
 
 // NewTabalespaceCollector returns a new Collector exposing session activity statistics.

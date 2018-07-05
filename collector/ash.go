@@ -11,7 +11,7 @@ type ashCollector struct {
 }
 
 func init() {
-	registerCollector("ash", cMin, defaultEnabled, NewASHCollector)
+	registerCollector("ash", defaultEnabled, NewASHCollector)
 }
 
 // NewASHCollector returns a new Collector exposing ash activity statistics.

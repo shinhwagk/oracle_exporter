@@ -11,7 +11,7 @@ type sqlCollector struct {
 }
 
 func init() {
-	registerCollector("sql", cMin, defaultEnabled, NewSQLCollector)
+	registerCollector("sql", defaultEnabled, NewSQLCollector)
 }
 
 // NewSQLCollector returns a new Collector exposing session activity statistics.
