@@ -37,7 +37,7 @@ func (c *sesstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 	for rows.Next() {
 		var serial, sid, name, username, class string
 		var value float64
-		if err := rows.Scan(&sid, &serial, &username, &name, &class, &value); err != nil {
+		if err := rows.Scan(&sid, &serial, &name, &username, &class, &value); err != nil {
 			return err
 		}
 
@@ -58,7 +58,6 @@ SELECT s.sid,
        s.serial#,
        sn.name,
        s.username,
-       ss.value,
        decode(sn.class,
               1,
               'User',
@@ -76,7 +75,8 @@ SELECT s.sid,
               'SQL',
               128,
               'Debug',
-              'null') class
+              'null'),
+       ss.value,
   FROM v$sesstat ss, v$statname sn, v$session s
  WHERE s.sid = ss.sid
    AND ss.STATISTIC# = sn.STATISTIC#

@@ -41,14 +41,14 @@ func (c *ashCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 const ashSQL = `
 select sample_id,
        session_id,
-			 session_serial#,
-       decode(session_state,'ON CPU', 'Wait for CPU', 'WAITING', event),
+       session_serial#,
+       decode(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event),
        session_type,
        (select username from dba_users where user_id = ash.user_id),
        nvl(sql_id, 'null'),
        nvl(sql_opname, 'null'),
-       nvl(Program,'null'),
-			 nvl(machine,'null'),
-			 nvl(blocking_session,'null')
+       nvl(program, 'null'),
+       nvl(machine, 'null'),
+       decode(blocking_session, null, 'null', to_char(blocking_session))
   from v$active_session_history ash
  where SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')`
