@@ -24,6 +24,11 @@ func NewSesstatCollector() (Collector, error) {
 	descs["parse count (total)"] = newDesc("sesstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "name", "class"}, nil)
 	descs["DB time"] = newDesc("sesstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "name", "class"}, nil)
 	descs["redo size"] = newDesc("sesstat", "redo_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "name", "class"}, nil)
+	descs["parse count (hard)"] = newDesc("sesstat", "parse_hard_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse count (failures)"] = newDesc("sesstat", "parse_failures_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse count (describe)"] = newDesc("sesstat", "parse_describe_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse time cpu"] = newDesc("sesstat", "parse_time_cpu_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["parse time elapsed"] = newDesc("sesstat", "parse_time_elapsed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	return &sesstatCollector{descs}, nil
 }
 
