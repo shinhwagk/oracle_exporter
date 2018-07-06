@@ -18,19 +18,19 @@ func init() {
 // NewSysstatCollector returns a new Collector exposing session activity statistics.
 func NewSysstatCollector() (Collector, error) {
 	descs := make(map[string]*prometheus.Desc)
-	descs["user commits"] = newDesc("sysstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["user rollbacks"] = newDesc("sysstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["execute count"] = newDesc("sysstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["parse count (total)"] = newDesc("sysstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["DB time"] = newDesc("sysstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["redo size"] = newDesc("sysstat", "redo_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["parse count (hard)"] = newDesc("sysstat", "parse_hard_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["parse count (failures)"] = newDesc("sysstat", "parse_failures_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["parse count (describe)"] = newDesc("sysstat", "parse_describe_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["parse time cpu"] = newDesc("sysstat", "parse_time_cpu_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["parse time elapsed"] = newDesc("sysstat", "parse_time_elapsed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["physical read total bytes"] = newDesc("sysstat", "phy_read_total_bytes", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
-	descs["physical write total bytes"] = newDesc("sysstat", "phy_write_total_bytes", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["user commits"] = newDesc("sysstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["user rollbacks"] = newDesc("sysstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["execute count"] = newDesc("sysstat", "execute_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["parse count (total)"] = newDesc("sysstat", "parse_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["DB time"] = newDesc("sysstat", "dbtime_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["redo size"] = newDesc("sysstat", "redo_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["parse count (hard)"] = newDesc("sysstat", "parse_hard_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["parse count (failures)"] = newDesc("sysstat", "parse_failures_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["parse count (describe)"] = newDesc("sysstat", "parse_describe_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["parse time cpu"] = newDesc("sysstat", "parse_time_cpu_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["parse time elapsed"] = newDesc("sysstat", "parse_time_elapsed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["physical read total bytes"] = newDesc("sysstat", "phy_read_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
+	descs["physical write total bytes"] = newDesc("sysstat", "phy_write_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"class"}, nil)
 	return &sysstatCollector{descs}, nil
 }
 
@@ -51,7 +51,7 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 		desc, ok := c.descs[name]
 
 		if ok {
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, value, name, class)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, value, class)
 		} else {
 			return errors.New("sysstat desc no exist")
 		}
@@ -62,7 +62,7 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 
 const sysstatSQL = `
 SELECT name,
-       value,
+			 value,
 			 decode(class, 1, 'User', 2,
               				 	'Read', 4,
               					'Enqueue', 8,
