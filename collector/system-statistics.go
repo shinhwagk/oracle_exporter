@@ -29,6 +29,8 @@ func NewSysstatCollector() (Collector, error) {
 	descs["parse count (describe)"] = newDesc("sysstat", "parse_describe_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	descs["parse time cpu"] = newDesc("sysstat", "parse_time_cpu_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	descs["parse time elapsed"] = newDesc("sysstat", "parse_time_elapsed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["physical read total bytes"] = newDesc("sysstat", "phy_read_total_bytes", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
+	descs["physical write total bytes"] = newDesc("sysstat", "phy_write_total_bytes", "Generic counter metric from v$sesstat view in Oracle.", []string{"name", "class"}, nil)
 	return &sysstatCollector{descs}, nil
 }
 
@@ -80,4 +82,6 @@ SELECT name,
 								'user commits',
 								'user rollbacks',
 								'DB time',
-								'redo size')`
+								'redo size',
+								'physical read total bytes',
+								'physical write total bytes')`
