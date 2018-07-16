@@ -11,13 +11,13 @@ type sessionCollector struct {
 }
 
 func init() {
-	// registerCollector("session", cMin, defaultEnabled, NewSessionCollector)
+	registerCollector("session", defaultEnabled, NewSessionCollector)
 }
 
 // NewSessionCollector returns a new Collector exposing session activity statistics.
 func NewSessionCollector() (Collector, error) {
 	return &sessionCollector{
-		newDesc("sessions", "activity", "Gauge metric with count of sessions by status and type", []string{"username", "status", "type"}, nil),
+		newDesc("", "session", "Gauge metric with count of sessions by status and type", []string{"username", "status", "type", "machine"}, nil),
 	}, nil
 }
 
@@ -30,15 +30,18 @@ func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 
 	for rows.Next() {
 		var (
-			username, status, sessionType string
-			count                         float64
+			username, status, sessType, machine string
+			count                               float64
 		)
-		if err = rows.Scan(&username, &status, &sessionType, &count); err != nil {
+		if err = rows.Scan(&username, &status, &machine, &sessType, &count); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, count, username, status, sessionType)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, count, username, status, sessType, machine)
 	}
 	return nil
 }
 
-const sessionSQL = "SELECT username, status, type, COUNT(*) FROM v$session GROUP BY username, status, type"
+const sessionSQL = `
+SELECT nvl(USERNAME, 'null'), STATUS, MACHINE, TYPE, COUNT(*)
+  FROM V$SESSION
+ GROUP BY USERNAME, STATUS, MACHINE, TYPE`
