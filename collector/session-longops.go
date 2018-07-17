@@ -22,7 +22,7 @@ func NewSessionLongOpsCollector() (Collector, error) {
 }
 
 func (c *sessionLongOpsCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(sessionSQL)
+	rows, err := db.Query(sessionLongOpsSQL)
 	if err != nil {
 		return err
 	}
