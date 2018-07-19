@@ -40,13 +40,15 @@ func (c *sessionLongOpsCollector) Update(db *sql.DB, ch chan<- prometheus.Metric
 }
 
 const sessionLongOpsSQL = `
-SELECT username,
-       opname,
-       nvl(target, '') || nvl(target_desc, ''),
-       sid,
-       serial#
-  FROM v$session_longops
- WHERE (start_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND
-       start_time < TRUNC(sysdate, 'MI'))
-    or (last_update_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND
-       last_update_time < TRUNC(sysdate, 'MI'))`
+select username, opname, target, sid, serial, count(*)
+  from (SELECT username,
+               opname,
+               nvl(target, '') || nvl(target_desc, '') target,
+               sid,
+               serial# serial
+          FROM v$session_longops
+         WHERE (start_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND
+               start_time < TRUNC(sysdate, 'MI'))
+            or (last_update_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND
+               last_update_time < TRUNC(sysdate, 'MI')))
+ group by username, opname, target, sid, serial`
