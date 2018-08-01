@@ -75,7 +75,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Couldn't create collector: %s", err)
 	}
-	log.Infof("Enabled collectors:")
+	log.Infof("Available collectors:")
 	collectors := []string{}
 	for n := range nc.Collectors {
 		collectors = append(collectors, n)

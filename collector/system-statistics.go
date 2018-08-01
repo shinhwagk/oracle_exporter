@@ -12,8 +12,8 @@ type sysstatCollector struct {
 }
 
 func init() {
-	registerCollector("sysstat-10g", NewSysstatCollector)
-	registerCollector("sysstat-11g", NewSysstatCollector)
+	registerCollector("systemStats-10g", NewSysstatCollector)
+	registerCollector("systemStats-11g", NewSysstatCollector)
 }
 
 // NewSysstatCollector returns a new Collector exposing session activity statistics.

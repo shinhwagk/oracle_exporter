@@ -13,8 +13,8 @@ type sysTimeModelCollector struct {
 }
 
 func init() {
-	registerCollector("systimemodel-10g", NewSysTimeModelCollector)
-	registerCollector("systimemodel-11g", NewSysTimeModelCollector)
+	registerCollector("systemTimeModel-10g", NewSysTimeModelCollector)
+	registerCollector("systemTimeModel-11g", NewSysTimeModelCollector)
 }
 
 // NewSysTimeModelCollector returns a new Collector exposing session activity statistics.
