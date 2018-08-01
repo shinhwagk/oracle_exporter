@@ -34,17 +34,23 @@ type oracleCollector struct {
 
 // NewOracleCollector creates a new OracleCollector
 func NewOracleCollector(filters ...string) (*oracleCollector, error) {
-	collectors := make(map[string]Collector)
+	f := make(map[string]bool)
 	for _, filter := range filters {
 		_, exist := factories[filter]
-		if exist {
-			collector, err := factories[filter]()
-			if err != nil {
-				return nil, err
-			}
-			collectors[filter] = collector
-		} else {
+		if !exist {
 			return nil, fmt.Errorf("missing collector: %s", filter)
+		}
+		f[filter] = true
+	}
+
+	collectors := make(map[string]Collector)
+	for c, factory := range factories {
+		collector, err := factory()
+		if err != nil {
+			return nil, err
+		}
+		if len(f) == 0 || f[c] {
+			collectors[c] = collector
 		}
 	}
 

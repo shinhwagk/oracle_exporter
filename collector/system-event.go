@@ -15,8 +15,8 @@ type sysClassCollector struct {
 }
 
 func init() {
-	registerCollector("systemEvent", NewSysEventCollector)
-	// registerCollector("systemClass",   NewSysClassCollector)
+	registerCollector("systemEvent-10g", NewSysEventCollector)
+	registerCollector("systemEvent-11g", NewSysEventCollector)
 }
 
 // NewSysEventCollector returns a new Collector exposing session activity statistics.

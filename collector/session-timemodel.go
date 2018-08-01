@@ -14,7 +14,6 @@ type sessTimeModelCollector struct {
 func init() {
 	registerCollector("sesstimemodel-10g", NewSessTimeModelCollector)
 	registerCollector("sesstimemodel-11g", NewSessTimeModelCollector)
-	// registerCollector("sesstat-10g", NewSesstatCollector)
 }
 
 // NewSesstatCollector returns a new Collector exposing session activity statistics.

@@ -1,0 +1,1 @@
+http://127.0.0.1:9100/metrics?collect[]=sql-11g

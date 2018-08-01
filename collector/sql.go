@@ -62,8 +62,8 @@ func (c *sql11GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 
 	for rows.Next() {
 		var sqlID, username, commandType, child string
-		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, phy_r_b, phy_r_r, phy_w_b, phy_w_r, uiwt, pc float64
-		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &phy_r_b, &phy_r_r, &phy_w_b, &phy_w_r, &uiwt); err != nil {
+		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, phyRB, phyRR, phyWB, phyWR, uiwt, pc float64
+		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &phyRB, &phyRR, &phyWB, &phyWR, &uiwt, &pc); err != nil {
 			return err
 		}
 
@@ -73,10 +73,10 @@ func (c *sql11GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 		ch <- prometheus.MustNewConstMetric(c.descs[3], prometheus.CounterValue, bufferGets, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[4], prometheus.CounterValue, diskReads, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[5], prometheus.CounterValue, sort, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, phy_r_b, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, phy_r_r, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[8], prometheus.CounterValue, phy_w_b, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[9], prometheus.CounterValue, phy_w_r, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, phyRB, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, phyRR, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[8], prometheus.CounterValue, phyWB, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[9], prometheus.CounterValue, phyWR, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[10], prometheus.CounterValue, uiwt, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[11], prometheus.CounterValue, pc, username, sqlID, commandType, child)
 	}
@@ -110,7 +110,7 @@ func (c *sql10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 }
 
 const (
-	sQLSystemName = "systimemodel"
+	sQLSystemName = "sql"
 	sql11GSQL     = `
 SELECT sql_id,
 			 child_number,

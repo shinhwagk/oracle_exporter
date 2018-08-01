@@ -15,8 +15,8 @@ type sessClassCollector struct {
 }
 
 func init() {
-	registerCollector("sessionEvent", NewSessEventCollector)
-	// registerCollector("sessionClass", cMin,  NewSessClassCollector)
+	registerCollector("sessionEvent-10g", NewSessEventCollector)
+	registerCollector("sessionEvent-11g", NewSessEventCollector)
 }
 
 // NewSessEventCollector returns a new Collector exposing session activity statistics.
