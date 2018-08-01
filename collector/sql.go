@@ -93,8 +93,8 @@ func (c *sql10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 
 	for rows.Next() {
 		var sqlID, username, commandType, child string
-		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, uiwt, pc float64
-		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &uiwt, &pc); err != nil {
+		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, uiwt float64
+		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &uiwt); err != nil {
 			return err
 		}
 

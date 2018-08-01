@@ -53,5 +53,5 @@ func (c *sysTimeModelCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) 
 
 const (
 	sysTimeModelSystemName = "systimemodel"
-	systemTimeModelSQL     = `SELECT stat_name, value FROM v$sys_time_model`
+	systemTimeModelSQL     = `SELECT stat_name, value FROM v$sys_time_model WHERE stat_name in ('DB time')`
 )

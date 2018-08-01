@@ -12,11 +12,11 @@ type sessTimeModelCollector struct {
 }
 
 func init() {
-	registerCollector("sesstimemodel-10g", NewSessTimeModelCollector)
-	registerCollector("sesstimemodel-11g", NewSessTimeModelCollector)
+	registerCollector("sessionTimeModel-10g", NewSessTimeModelCollector)
+	registerCollector("sessionTimeModel-11g", NewSessTimeModelCollector)
 }
 
-// NewSesstatCollector returns a new Collector exposing session activity statistics.
+// NewSessTimeModelCollector returns a new Collector exposing session activity statistics.
 func NewSessTimeModelCollector() (Collector, error) {
 	descs := make(map[string]*prometheus.Desc)
 	descs["DB time"] = newDesc(sessTimeModelSystemName, "db_time", "Generic counter metric from v$sesstat view in Oracle.", []string{"sid", "username"}, nil)
@@ -24,7 +24,7 @@ func NewSessTimeModelCollector() (Collector, error) {
 }
 
 func (c *sessTimeModelCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(systemTimeModelSQL)
+	rows, err := db.Query(sessTimeModelSQL)
 	if err != nil {
 		return err
 	}
@@ -54,5 +54,5 @@ const (
 	sessTimeModelSQL        = `
 	SELECT s.sid, s.username, stm.stat_name, stm.value
 	FROM v$sess_time_model stm, v$session s
-	WHERE stm.sid = s.sid AND stm.stat_name = 'DB time' AND s.username is not null`
+	WHERE stm.sid = s.sid AND s.username is not null AND stm.stat_name in ('DB time')`
 )
