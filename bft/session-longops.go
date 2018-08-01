@@ -11,7 +11,7 @@ type sessionLongOpsCollector struct {
 }
 
 func init() {
-	registerCollector("sessionLongOps", defaultEnabled, NewSessionLongOpsCollector)
+	// registerCollector("sessionLongOps", NewSessionLongOpsCollector)
 }
 
 // NewSessionLongOpsCollector returns a new Collector exposing session activity statistics.

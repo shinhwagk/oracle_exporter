@@ -7,7 +7,7 @@
 ![image](https://raw.githubusercontent.com/shinhwagk/oracle_exporter/master/grafana/OracleUser.png)
 
 
-### metrics
+### metrics 11g,12c
 - ash
 - sessionEvent
 - sesstat

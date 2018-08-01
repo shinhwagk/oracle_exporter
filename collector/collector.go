@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const namespace = "oracle"
@@ -19,31 +18,12 @@ var (
 	oracleUpDesc       = newDesc("", "up", "oracle_exporter: Whether the Oracle server is up.", nil, nil)
 )
 
-const (
-	defaultEnabled  = true
-	defaultDisabled = false
-)
-
 var (
-	factories      = make(map[string]func() (Collector, error))
-	collectorState = make(map[string]*bool)
+	factories = make(map[string]func() (Collector, error))
+	// collectorState = make(map[string]*bool)
 )
 
-func registerCollector(collector string, isDefaultEnabled bool, factory func() (Collector, error)) {
-	var helpDefaultState string
-	if isDefaultEnabled {
-		helpDefaultState = "enabled"
-	} else {
-		helpDefaultState = "disabled"
-	}
-
-	flagName := fmt.Sprintf("collector.%s", collector)
-	flagHelp := fmt.Sprintf("Enable the %s collector (default: %s).", collector, helpDefaultState)
-	defaultValue := fmt.Sprintf("%v", isDefaultEnabled)
-
-	flag := kingpin.Flag(flagName, flagHelp).Default(defaultValue).Bool()
-	collectorState[collector] = flag
-
+func registerCollector(collector string, factory func() (Collector, error)) {
 	factories[collector] = factory
 }
 
@@ -54,29 +34,20 @@ type oracleCollector struct {
 
 // NewOracleCollector creates a new OracleCollector
 func NewOracleCollector(filters ...string) (*oracleCollector, error) {
-	f := make(map[string]bool)
-	for _, filter := range filters {
-		enabled, exist := collectorState[filter]
-		if !exist {
-			return nil, fmt.Errorf("missing collector: %s", filter)
-		}
-		if !*enabled {
-			return nil, fmt.Errorf("disabled collector: %s", filter)
-		}
-		f[filter] = true
-	}
 	collectors := make(map[string]Collector)
-	for key, enabled := range collectorState {
-		if *enabled {
-			collector, err := factories[key]() // get each collector desc
+	for _, filter := range filters {
+		_, exist := factories[filter]
+		if exist {
+			collector, err := factories[filter]()
 			if err != nil {
 				return nil, err
 			}
-			if len(f) == 0 || f[key] {
-				collectors[key] = collector
-			}
+			collectors[filter] = collector
+		} else {
+			return nil, fmt.Errorf("missing collector: %s", filter)
 		}
 	}
+
 	return &oracleCollector{collectors}, nil
 }
 

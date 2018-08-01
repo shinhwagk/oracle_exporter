@@ -11,7 +11,7 @@ type sessionCollector struct {
 }
 
 func init() {
-	registerCollector("session", defaultEnabled, NewSessionCollector)
+	registerCollector("session", NewSessionCollector)
 }
 
 // NewSessionCollector returns a new Collector exposing session activity statistics.
@@ -42,6 +42,6 @@ func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
 
 const sessionSQL = `
-SELECT nvl(USERNAME, 'null'), STATUS, MACHINE, TYPE, COUNT(*)
-  FROM V$SESSION
- GROUP BY USERNAME, STATUS, MACHINE, TYPE`
+SELECT NVL(username, 'null'), status, machine, type, COUNT(*)
+  FROM v$session
+ GROUP BY username, status, machine, type`

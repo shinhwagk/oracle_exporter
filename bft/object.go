@@ -11,7 +11,7 @@ type objectCollector struct {
 }
 
 func init() {
-	// registerCollector("object", cHour, defaultEnabled, NewObjectCollector)
+	// registerCollector("object", cHour,  NewObjectCollector)
 }
 
 // NewObjectCollector returns a new Collector exposing session activity statistics.

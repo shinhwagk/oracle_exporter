@@ -7,21 +7,21 @@ import (
 )
 
 type sysEventCollector struct {
-	descs [2]*prometheus.Desc
+	descs [sysEventCollectorNumber]*prometheus.Desc
 }
 
 type sysClassCollector struct {
-	descs [4]*prometheus.Desc
+	descs [sysClassCollectorNumber]*prometheus.Desc
 }
 
 func init() {
-	registerCollector("systemEvent", defaultEnabled, NewSysEventCollector)
-	// registerCollector("systemClass", cMin, defaultEnabled, NewSysClassCollector)
+	registerCollector("systemEvent", NewSysEventCollector)
+	// registerCollector("systemClass",   NewSysClassCollector)
 }
 
 // NewSysEventCollector returns a new Collector exposing session activity statistics.
 func NewSysEventCollector() (Collector, error) {
-	descs := [2]*prometheus.Desc{
+	descs := [sysEventCollectorNumber]*prometheus.Desc{
 		newDesc("sysevent", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 		newDesc("sysevent", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 	}
@@ -30,7 +30,7 @@ func NewSysEventCollector() (Collector, error) {
 
 // NewSysClassCollector returns a new Collector exposing session activity statistics.
 func NewSysClassCollector() (Collector, error) {
-	descs := [4]*prometheus.Desc{
+	descs := [sysClassCollectorNumber]*prometheus.Desc{
 		newDesc("sysclass", "waits_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
 		newDesc("sysclass", "waited_time_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
 		newDesc("sysclass", "waits_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
@@ -82,7 +82,9 @@ func (c *sysClassCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) erro
 }
 
 const (
-	sysEventSQL = `
+	sysEventCollectorNumber = 2
+	sysClassCollectorNumber = 4
+	sysEventSQL             = `
 SELECT n.wait_class, e.event, e.total_waits, e.time_waited_micro
 	FROM v$system_event e, v$event_name n
 WHERE n.name = e.event AND time_waited > 0`
