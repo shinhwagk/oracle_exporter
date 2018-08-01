@@ -11,8 +11,8 @@ type logHistoryCollector struct {
 }
 
 func init() {
-	registerCollector("loghistory-10g", NewLogHistoryCollector)
-	registerCollector("loghistory-11g", NewLogHistoryCollector)
+	registerCollector("logHistory-10g", NewLogHistoryCollector)
+	registerCollector("logHistory-11g", NewLogHistoryCollector)
 }
 
 // NewLogHistoryCollector returns a new Collector exposing ash activity statistics.
