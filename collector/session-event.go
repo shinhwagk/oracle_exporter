@@ -19,7 +19,7 @@ func init() {
 	registerCollector("sessionEvent-11g", NewSessEventCollector)
 }
 
-// NewSessEventCollector returns a new Collector exposing session activity statistics.
+// NewSessEventCollector
 func NewSessEventCollector() (Collector, error) {
 	descs := [3]*prometheus.Desc{
 		createNewDesc("sessevent", "waits_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),

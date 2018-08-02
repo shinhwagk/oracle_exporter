@@ -15,7 +15,7 @@ func init() {
 	registerCollector("tablespace-11g", NewTabalespaceCollector)
 }
 
-// NewTabalespaceCollector returns a new Collector exposing session activity statistics.
+// NewTabalespaceCollector
 func NewTabalespaceCollector() (Collector, error) {
 	descs := [3]*prometheus.Desc{
 		createNewDesc("tablespace", "alloc_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),

@@ -15,7 +15,7 @@ func init() {
 	registerCollector("logHistory-11g", NewLogHistoryCollector)
 }
 
-// NewLogHistoryCollector returns a new Collector exposing ash activity statistics.
+// NewLogHistoryCollector
 func NewLogHistoryCollector() (Collector, error) {
 	desc := createNewDesc("loghistory", "sequence", "Gauge metric with count of sessions by status and type", []string{"recid", "year", "month", "day", "hour", "minute"}, nil)
 	return &logHistoryCollector{desc}, nil

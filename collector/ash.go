@@ -18,15 +18,15 @@ func init() {
 	registerCollector("ash-11g", NewASH11GCollector)
 }
 
-// NewASH11GCollector returns a new Collector exposing ash activity statistics.
+// NewASH11GCollector
 func NewASH11GCollector() (Collector, error) {
 	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opname", "program", "machine"}, nil)
 	return &ash11GCollector{desc}, nil
 }
 
-// NewASH10GCollector returns a new Collector exposing ash activity statistics.
+// NewASH10GCollector
 func NewASH10GCollector() (Collector, error) {
-	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opname", "program", "machine"}, nil)
+	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opcode", "program", "machine"}, nil)
 	return &ash10GCollector{desc}, nil
 }
 

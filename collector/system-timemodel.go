@@ -17,10 +17,10 @@ func init() {
 	registerCollector("systemTimeModel-11g", NewSysTimeModelCollector)
 }
 
-// NewSysTimeModelCollector returns a new Collector exposing session activity statistics.
+// NewSysTimeModelCollector
 func NewSysTimeModelCollector() (Collector, error) {
 	descs := make(map[string]*prometheus.Desc)
-	descs["DB time"] = createNewDesc(sysTimeModelSystemName, "db_time", "Generic counter metric from v$sesstat view in Oracle.", nil, nil)
+	descs["DB time"] = createNewDesc(sysTimeModelSystemName, "db_time", "Generic counter metric.", nil, nil)
 	return &sysTimeModelCollector{descs}, nil
 }
 

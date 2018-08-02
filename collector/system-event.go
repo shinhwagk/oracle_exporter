@@ -19,7 +19,7 @@ func init() {
 	registerCollector("systemEvent-11g", NewSysEventCollector)
 }
 
-// NewSysEventCollector returns a new Collector exposing session activity statistics.
+// NewSysEventCollector
 func NewSysEventCollector() (Collector, error) {
 	descs := [sysEventCollectorNumber]*prometheus.Desc{
 		createNewDesc("sysevent", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
@@ -28,7 +28,7 @@ func NewSysEventCollector() (Collector, error) {
 	return &sysEventCollector{descs}, nil
 }
 
-// NewSysClassCollector returns a new Collector exposing session activity statistics.
+// NewSysClassCollector
 func NewSysClassCollector() (Collector, error) {
 	descs := [sysClassCollectorNumber]*prometheus.Desc{
 		createNewDesc("sysclass", "waits_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),

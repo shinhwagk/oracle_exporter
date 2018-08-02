@@ -16,7 +16,7 @@ func init() {
 	registerCollector("sessionStats-11g", NewSesstatCollector)
 }
 
-// NewSesstatCollector returns a new Collector exposing session activity statistics.
+// NewSesstatCollector
 func NewSesstatCollector() (Collector, error) {
 	descs := make(map[string]*prometheus.Desc)
 	descs["user commits"] = createNewDesc("sesstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "class"}, nil)

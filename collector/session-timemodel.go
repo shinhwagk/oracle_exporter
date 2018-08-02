@@ -16,7 +16,7 @@ func init() {
 	registerCollector("sessionTimeModel-11g", NewSessTimeModelCollector)
 }
 
-// NewSessTimeModelCollector returns a new Collector exposing session activity statistics.
+// NewSessTimeModelCollector.
 func NewSessTimeModelCollector() (Collector, error) {
 	descs := make(map[string]*prometheus.Desc)
 	descs["DB time"] = createNewDesc(sessTimeModelSystemName, "db_time", "Generic counter metric from v$sesstat view in Oracle.", []string{"sid", "username"}, nil)
