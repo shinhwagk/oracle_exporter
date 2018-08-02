@@ -16,13 +16,13 @@ func init() {
 }
 
 // NewTabalespaceCollector
-func NewTabalespaceCollector() (Collector, error) {
+func NewTabalespaceCollector() Collector {
 	descs := [3]*prometheus.Desc{
 		createNewDesc("tablespace", "alloc_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
 		createNewDesc("tablespace", "max_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
 		createNewDesc("tablespace", "alloc_free_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
 	}
-	return &tablespaceCollector{descs}, nil
+	return &tablespaceCollector{descs}
 }
 
 func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

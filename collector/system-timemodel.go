@@ -18,10 +18,10 @@ func init() {
 }
 
 // NewSysTimeModelCollector
-func NewSysTimeModelCollector() (Collector, error) {
+func NewSysTimeModelCollector() Collector {
 	descs := make(map[string]*prometheus.Desc)
 	descs["DB time"] = createNewDesc(sysTimeModelSystemName, "db_time", "Generic counter metric.", nil, nil)
-	return &sysTimeModelCollector{descs}, nil
+	return &sysTimeModelCollector{descs}
 }
 
 func (c *sysTimeModelCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

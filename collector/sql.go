@@ -20,7 +20,7 @@ func init() {
 }
 
 // NewSQL11GCollector
-func NewSQL11GCollector() (Collector, error) {
+func NewSQL11GCollector() Collector {
 	descs := [12]*prometheus.Desc{
 		createNewDesc(sQLSystemName, "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
@@ -35,11 +35,11 @@ func NewSQL11GCollector() (Collector, error) {
 		createNewDesc(sQLSystemName, "user_io_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "parse_calls_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 	}
-	return &sql11GCollector{descs}, nil
+	return &sql11GCollector{descs}
 }
 
-// NewSQL10GCollector returns a new Collector exposing session activity statistics.
-func NewSQL10GCollector() (Collector, error) {
+// NewSQL10GCollector
+func NewSQL10GCollector() Collector {
 	descs := [7]*prometheus.Desc{
 		createNewDesc(sQLSystemName, "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
@@ -49,7 +49,7 @@ func NewSQL10GCollector() (Collector, error) {
 		createNewDesc(sQLSystemName, "sort_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "user_io_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 	}
-	return &sql10GCollector{descs}, nil
+	return &sql10GCollector{descs}
 }
 
 func (c *sql11GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

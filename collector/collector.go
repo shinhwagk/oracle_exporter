@@ -19,7 +19,7 @@ var (
 )
 
 var (
-	factories = make(map[string]func() (Collector, error))
+	factories = make(map[string]func() Collector)
 )
 
 // OracleCollector implements the prometheus.Collector interface.
@@ -27,7 +27,7 @@ type oracleCollector struct {
 	Collectors map[string]Collector
 }
 
-func registerCollector(collector string, factory func() (Collector, error)) {
+func registerCollector(collector string, factory func() Collector) {
 	factories[collector] = factory
 }
 
@@ -44,12 +44,8 @@ func NewOracleCollector(filters ...string) (*oracleCollector, error) {
 
 	collectors := make(map[string]Collector)
 	for c, factory := range factories {
-		collector, err := factory()
-		if err != nil {
-			return nil, err
-		}
 		if len(f) == 0 || f[c] {
-			collectors[c] = collector
+			collectors[c] = factory()
 		}
 	}
 

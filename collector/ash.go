@@ -19,15 +19,15 @@ func init() {
 }
 
 // NewASH11GCollector
-func NewASH11GCollector() (Collector, error) {
+func NewASH11GCollector() Collector {
 	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opname", "program", "machine"}, nil)
-	return &ash11GCollector{desc}, nil
+	return &ash11GCollector{desc}
 }
 
 // NewASH10GCollector
-func NewASH10GCollector() (Collector, error) {
+func NewASH10GCollector() Collector {
 	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opcode", "program", "machine"}, nil)
-	return &ash10GCollector{desc}, nil
+	return &ash10GCollector{desc}
 }
 
 func (c *ash11GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

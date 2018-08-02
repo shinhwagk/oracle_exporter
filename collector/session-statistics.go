@@ -17,7 +17,7 @@ func init() {
 }
 
 // NewSesstatCollector
-func NewSesstatCollector() (Collector, error) {
+func NewSesstatCollector() Collector {
 	descs := make(map[string]*prometheus.Desc)
 	descs["user commits"] = createNewDesc("sesstat", "commit_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "class"}, nil)
 	descs["user rollbacks"] = createNewDesc("sesstat", "rollback_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "class"}, nil)
@@ -30,7 +30,7 @@ func NewSesstatCollector() (Collector, error) {
 	descs["parse count (describe)"] = createNewDesc("sesstat", "parse_describe_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "class"}, nil)
 	descs["parse time cpu"] = createNewDesc("sesstat", "parse_time_cpu_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "class"}, nil)
 	descs["parse time elapsed"] = createNewDesc("sesstat", "parse_time_elapsed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"serial", "username", "sid", "class"}, nil)
-	return &sesstatCollector{descs}, nil
+	return &sesstatCollector{descs}
 }
 
 func (c *sesstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

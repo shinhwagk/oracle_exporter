@@ -20,22 +20,22 @@ func init() {
 }
 
 // NewSessEventCollector
-func NewSessEventCollector() (Collector, error) {
+func NewSessEventCollector() Collector {
 	descs := [3]*prometheus.Desc{
 		createNewDesc("sessevent", "waits_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
 		createNewDesc("sessevent", "waited_time_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
 		createNewDesc("sessevent", "timeout_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
 	}
-	return &sessEventCollector{descs}, nil
+	return &sessEventCollector{descs}
 }
 
-// NewSessClassCollector returns a new Collector exposing session activity statistics.
-func NewSessClassCollector() (Collector, error) {
+// NewSessClassCollector
+func NewSessClassCollector() Collector {
 	descs := [2]*prometheus.Desc{
 		createNewDesc("sessclass", "waits_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "serial", "class", "sid"}, nil),
 		createNewDesc("sessclass", "waited_time_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "serial", "class", "sid"}, nil),
 	}
-	return &sessClassCollector{descs}, nil
+	return &sessClassCollector{descs}
 }
 
 func (c *sessEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

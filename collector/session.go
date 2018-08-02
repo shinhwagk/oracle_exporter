@@ -16,10 +16,10 @@ func init() {
 }
 
 // NewSessionCollector
-func NewSessionCollector() (Collector, error) {
+func NewSessionCollector() Collector {
 	return &sessionCollector{
 		createNewDesc("", "session", "Gauge metric with count of sessions by status and type", []string{"username", "status", "type", "machine"}, nil),
-	}, nil
+	}
 }
 
 func (c *sessionCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

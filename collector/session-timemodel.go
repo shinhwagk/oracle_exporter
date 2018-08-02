@@ -17,10 +17,10 @@ func init() {
 }
 
 // NewSessTimeModelCollector.
-func NewSessTimeModelCollector() (Collector, error) {
+func NewSessTimeModelCollector() Collector {
 	descs := make(map[string]*prometheus.Desc)
 	descs["DB time"] = createNewDesc(sessTimeModelSystemName, "db_time", "Generic counter metric from v$sesstat view in Oracle.", []string{"sid", "username"}, nil)
-	return &sessTimeModelCollector{descs}, nil
+	return &sessTimeModelCollector{descs}
 }
 
 func (c *sessTimeModelCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {

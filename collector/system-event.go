@@ -20,23 +20,23 @@ func init() {
 }
 
 // NewSysEventCollector
-func NewSysEventCollector() (Collector, error) {
+func NewSysEventCollector() Collector {
 	descs := [sysEventCollectorNumber]*prometheus.Desc{
 		createNewDesc("sysevent", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 		createNewDesc("sysevent", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 	}
-	return &sysEventCollector{descs}, nil
+	return &sysEventCollector{descs}
 }
 
 // NewSysClassCollector
-func NewSysClassCollector() (Collector, error) {
+func NewSysClassCollector() Collector {
 	descs := [sysClassCollectorNumber]*prometheus.Desc{
 		createNewDesc("sysclass", "waits_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
 		createNewDesc("sysclass", "waited_time_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
 		createNewDesc("sysclass", "waits_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
 		createNewDesc("sysclass", "waited_time_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
 	}
-	return &sysClassCollector{descs}, nil
+	return &sysClassCollector{descs}
 }
 
 func (c *sysEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
