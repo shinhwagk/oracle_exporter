@@ -53,15 +53,15 @@
   version = "v0.8.0"
 
 [[projects]]
-  digest = "1:d14a5f4bfecf017cb780bdde1b6483e5deb87e12c332544d2c430eda58734bcb"
+  branch = "master"
+  digest = "1:b82cbeab62e085ff6566c125f2978b17488f423466fb781dad29f4f4e388c75b"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
     "prometheus/promhttp",
   ]
   pruneopts = "UT"
-  revision = "c5b7fccd204277076155f10851dad72b76a49317"
-  version = "v0.8.0"
+  revision = "bcbbc08eb2ddff3af83bbf11e7ec13b4fd730b6e"
 
 [[projects]]
   branch = "master"
@@ -99,20 +99,12 @@
   revision = "05ee40e3a273f7245e8777337fc7b46e533a9a92"
 
 [[projects]]
-  digest = "1:d867dfa6751c8d7a435821ad3b736310c2ed68945d05b50fb9d23aee0540c8cc"
+  digest = "1:3b8f5d88e2b182b77f04355ed40c8810e516913bedc51b4ffd17ec506613a90e"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3e01752db0189b9157070a0e1668a620f9a85da2"
-  version = "v1.0.6"
-
-[[projects]]
-  branch = "master"
-  digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
-  name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
-  pruneopts = "UT"
-  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
+  revision = "a3f95b5c423586578a4e099b11a46c2479628cac"
+  version = "1.0.2"
 
 [[projects]]
   branch = "master"

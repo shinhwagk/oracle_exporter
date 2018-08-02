@@ -6,11 +6,8 @@ import (
 )
 
 type fieldKey string
-
-// FieldMap allows customization of the key names for default fields.
 type FieldMap map[fieldKey]string
 
-// Default key names for the default fields
 const (
 	FieldKeyMsg   = "msg"
 	FieldKeyLevel = "level"
@@ -25,7 +22,6 @@ func (f FieldMap) resolve(key fieldKey) string {
 	return string(key)
 }
 
-// JSONFormatter formats logs into parsable json
 type JSONFormatter struct {
 	// TimestampFormat sets the format used for marshaling timestamps.
 	TimestampFormat string
@@ -33,10 +29,7 @@ type JSONFormatter struct {
 	// DisableTimestamp allows disabling automatic timestamps in output
 	DisableTimestamp bool
 
-	// DataKey allows users to put all the log entry parameters into a nested dictionary at a given key.
-	DataKey string
-
-	// FieldMap allows users to customize the names of keys for default fields.
+	// FieldMap allows users to customize the names of keys for various fields.
 	// As an example:
 	// formatter := &JSONFormatter{
 	//   	FieldMap: FieldMap{
@@ -48,7 +41,6 @@ type JSONFormatter struct {
 	FieldMap FieldMap
 }
 
-// Format renders a single log entry
 func (f *JSONFormatter) Format(entry *Entry) ([]byte, error) {
 	data := make(Fields, len(entry.Data)+3)
 	for k, v := range entry.Data {
@@ -61,18 +53,11 @@ func (f *JSONFormatter) Format(entry *Entry) ([]byte, error) {
 			data[k] = v
 		}
 	}
-
-	if f.DataKey != "" {
-		newData := make(Fields, 4)
-		newData[f.DataKey] = data
-		data = newData
-	}
-
-	prefixFieldClashes(data, f.FieldMap)
+	prefixFieldClashes(data)
 
 	timestampFormat := f.TimestampFormat
 	if timestampFormat == "" {
-		timestampFormat = defaultTimestampFormat
+		timestampFormat = DefaultTimestampFormat
 	}
 
 	if !f.DisableTimestamp {
