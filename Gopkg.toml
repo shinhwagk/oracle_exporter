@@ -44,3 +44,8 @@
 [prune]
   go-tests = true
   unused-packages = true
+  
+  [[prune.project]]
+  name = "gopkg.in/goracle.v2"
+  non-go = false
+  unused-packages = false
