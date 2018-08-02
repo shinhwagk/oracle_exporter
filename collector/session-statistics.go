@@ -85,7 +85,7 @@ SELECT s.sid,
        ss.value
   FROM v$sesstat ss, v$statname sn, v$session s
  WHERE s.sid = ss.sid
-   AND ss.STATISTIC# = sn.STATISTIC#
+   AND ss.statistic# = sn.statistic#
    AND s.username IS NOT NULL
    AND ss.value > 0
    AND sn.name IN ('parse count (total)',
