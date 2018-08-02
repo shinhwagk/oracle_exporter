@@ -18,9 +18,9 @@ func init() {
 // NewTabalespaceCollector returns a new Collector exposing session activity statistics.
 func NewTabalespaceCollector() (Collector, error) {
 	descs := [3]*prometheus.Desc{
-		newDesc("tablespace", "alloc_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
-		newDesc("tablespace", "max_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
-		newDesc("tablespace", "alloc_free_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
+		createNewDesc("tablespace", "alloc_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
+		createNewDesc("tablespace", "max_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
+		createNewDesc("tablespace", "alloc_free_bytes", "Generic counter metric of tablespaces bytes in Oracle.", []string{"tablespace"}, nil),
 	}
 	return &tablespaceCollector{descs}, nil
 }

@@ -18,7 +18,7 @@ func init() {
 // NewSessionCollector returns a new Collector exposing session activity statistics.
 func NewSessionCollector() (Collector, error) {
 	return &sessionCollector{
-		newDesc("", "session", "Gauge metric with count of sessions by status and type", []string{"username", "status", "type", "machine"}, nil),
+		createNewDesc("", "session", "Gauge metric with count of sessions by status and type", []string{"username", "status", "type", "machine"}, nil),
 	}, nil
 }
 

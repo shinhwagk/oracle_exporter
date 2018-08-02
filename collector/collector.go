@@ -13,23 +13,22 @@ import (
 const namespace = "oracle"
 
 var (
-	scrapeDurationDesc = newDesc("scrape", "collector_duration_seconds", "oracle_exporter: Duration of a collector scrape.", []string{"collector"}, nil)
-	scrapeSuccessDesc  = newDesc("scrape", "collector_success", "oracle_exporter: Whether a collector succeeded.", []string{"collector"}, nil)
-	oracleUpDesc       = newDesc("", "up", "oracle_exporter: Whether the Oracle server is up.", nil, nil)
+	scrapeDurationDesc = createNewDesc("scrape", "collector_duration_seconds", "oracle_exporter: Duration of a collector scrape.", []string{"collector"}, nil)
+	scrapeSuccessDesc  = createNewDesc("scrape", "collector_success", "oracle_exporter: Whether a collector succeeded.", []string{"collector"}, nil)
+	oracleUpDesc       = createNewDesc("", "up", "oracle_exporter: Whether the Oracle server is up.", nil, nil)
 )
 
 var (
 	factories = make(map[string]func() (Collector, error))
-	// collectorState = make(map[string]*bool)
 )
-
-func registerCollector(collector string, factory func() (Collector, error)) {
-	factories[collector] = factory
-}
 
 // OracleCollector implements the prometheus.Collector interface.
 type oracleCollector struct {
 	Collectors map[string]Collector
+}
+
+func registerCollector(collector string, factory func() (Collector, error)) {
+	factories[collector] = factory
 }
 
 // NewOracleCollector creates a new OracleCollector
@@ -117,15 +116,6 @@ type Collector interface {
 	Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
 
-func newDesc(subsystem string, name string, help string, vls []string, cls prometheus.Labels) *prometheus.Desc {
+func createNewDesc(subsystem string, name string, help string, vls []string, cls prometheus.Labels) *prometheus.Desc {
 	return prometheus.NewDesc(prometheus.BuildFQName(namespace, subsystem, name), help, vls, cls)
-}
-
-type typedDesc struct {
-	desc      *prometheus.Desc
-	valueType prometheus.ValueType
-}
-
-func (d *typedDesc) mustNewConstMetric(value float64, labels ...string) prometheus.Metric {
-	return prometheus.MustNewConstMetric(d.desc, d.valueType, value, labels...)
 }

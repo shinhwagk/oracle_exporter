@@ -22,9 +22,9 @@ func init() {
 // NewSessEventCollector returns a new Collector exposing session activity statistics.
 func NewSessEventCollector() (Collector, error) {
 	descs := [3]*prometheus.Desc{
-		newDesc("sessevent", "waits_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
-		newDesc("sessevent", "waited_time_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
-		newDesc("sessevent", "timeout_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
+		createNewDesc("sessevent", "waits_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
+		createNewDesc("sessevent", "waited_time_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
+		createNewDesc("sessevent", "timeout_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "event", "class", "sid"}, nil),
 	}
 	return &sessEventCollector{descs}, nil
 }
@@ -32,8 +32,8 @@ func NewSessEventCollector() (Collector, error) {
 // NewSessClassCollector returns a new Collector exposing session activity statistics.
 func NewSessClassCollector() (Collector, error) {
 	descs := [2]*prometheus.Desc{
-		newDesc("sessclass", "waits_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "serial", "class", "sid"}, nil),
-		newDesc("sessclass", "waited_time_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "serial", "class", "sid"}, nil),
+		createNewDesc("sessclass", "waits_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "serial", "class", "sid"}, nil),
+		createNewDesc("sessclass", "waited_time_total", "Generic counter metric from v$session_event view in Oracle.", []string{"username", "serial", "class", "sid"}, nil),
 	}
 	return &sessClassCollector{descs}, nil
 }

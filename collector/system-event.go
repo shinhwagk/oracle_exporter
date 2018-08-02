@@ -22,8 +22,8 @@ func init() {
 // NewSysEventCollector returns a new Collector exposing session activity statistics.
 func NewSysEventCollector() (Collector, error) {
 	descs := [sysEventCollectorNumber]*prometheus.Desc{
-		newDesc("sysevent", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
-		newDesc("sysevent", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 	}
 	return &sysEventCollector{descs}, nil
 }
@@ -31,10 +31,10 @@ func NewSysEventCollector() (Collector, error) {
 // NewSysClassCollector returns a new Collector exposing session activity statistics.
 func NewSysClassCollector() (Collector, error) {
 	descs := [sysClassCollectorNumber]*prometheus.Desc{
-		newDesc("sysclass", "waits_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
-		newDesc("sysclass", "waited_time_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
-		newDesc("sysclass", "waits_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
-		newDesc("sysclass", "waited_time_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
+		createNewDesc("sysclass", "waits_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
+		createNewDesc("sysclass", "waited_time_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
+		createNewDesc("sysclass", "waits_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
+		createNewDesc("sysclass", "waited_time_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
 	}
 	return &sysClassCollector{descs}, nil
 }
