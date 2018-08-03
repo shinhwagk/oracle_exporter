@@ -35,7 +35,7 @@ func (c *logHistoryCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 	for rows.Next() {
 		var cnt, min, max float64
 
-		if err = rows.Scan(&cnt, &min, &max); err != nil {
+		if err := rows.Scan(&cnt, &min, &max); err != nil {
 			return err
 		}
 
