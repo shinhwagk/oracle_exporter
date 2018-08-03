@@ -7,7 +7,7 @@ import (
 )
 
 type logHistoryCollector struct {
-	descs [3]*prometheus.Desc
+	desc *prometheus.Desc
 }
 
 func init() {
@@ -17,12 +17,8 @@ func init() {
 
 // NewLogHistoryCollector desc.
 func NewLogHistoryCollector() Collector {
-	descs := [3]*prometheus.Desc{
-		createNewDesc("loghistory", "count", "Gauge metric with count of sessions by status and type", nil, nil),
-		createNewDesc("loghistory", "sequence_min", "Gauge metric with count of sessions by status and type", nil, nil),
-		createNewDesc("loghistory", "sequence_max", "Gauge metric with count of sessions by status and type", nil, nil),
-	}
-	return &logHistoryCollector{descs}
+	desc := createNewDesc("loghistory", "sequence", "Gauge metric with count of sessions by status and type", nil, nil)
+	return &logHistoryCollector{desc}
 }
 
 func (c *logHistoryCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
@@ -33,21 +29,15 @@ func (c *logHistoryCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 	defer rows.Close()
 
 	for rows.Next() {
-		var cnt, min, max float64
+		var max float64
 
-		if err := rows.Scan(&cnt, &min, &max); err != nil {
+		if err := rows.Scan(&max); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cnt)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, min)
-		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, max)
-
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, max)
 	}
 	return nil
 }
 
-const logHistorySQL = `
-	SELECT COUNT(*), MIN(sequence#), MAX(sequence#) FROM v$log_history
- WHERE thread# = (SELECT instance_number FROM v$instance)
-   AND first_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 HAVING COUNT(*) >= 1`
+const logHistorySQL = `SELECT MAX(sequence#) FROM v$log_history WHERE thread# = (SELECT instance_number FROM v$instance)`
