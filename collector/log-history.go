@@ -15,7 +15,7 @@ func init() {
 	registerCollector("logHistory-11g", NewLogHistoryCollector)
 }
 
-// NewLogHistoryCollector
+// NewLogHistoryCollector desc.
 func NewLogHistoryCollector() Collector {
 	descs := [3]*prometheus.Desc{
 		createNewDesc("loghistory", "count", "Gauge metric with count of sessions by status and type", nil, nil),
@@ -39,11 +39,9 @@ func (c *logHistoryCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 			return err
 		}
 
-		if cnt >= 1 {
-			ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, cnt)
-			ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, min)
-			ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, max)
-		}
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.GaugeValue, cnt)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, min)
+		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, max)
 
 	}
 	return nil
@@ -52,4 +50,4 @@ func (c *logHistoryCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 const logHistorySQL = `
 	SELECT COUNT(*), MIN(sequence#), MAX(sequence#) FROM v$log_history
  WHERE thread# = (SELECT instance_number FROM v$instance)
-   AND first_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
+   AND first_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 HAVING COUNT(*) >= 1`
