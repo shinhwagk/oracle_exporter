@@ -1,17 +1,23 @@
-### grafana
-1. edit grafana/grafana.json
-2. replace `"datasource": "p"` to `"datasource": "<your datasource name>"`
-
-![image](https://raw.githubusercontent.com/shinhwagk/oracle_exporter/master/grafana/OracleOverview.png)
-
-![image](https://raw.githubusercontent.com/shinhwagk/oracle_exporter/master/grafana/OracleUser.png)
-
-
 ### metrics 11g,12c
-- ash
-- sessionEvent
-- sesstat
-- systemEvent
-- sysstat
-- sql
-- tablespace
+- ash-10g
+- ash-11g
+- logHistory-10g
+- logHistory-11g
+- session-10g
+- session-11g
+- sessionEvent-10g
+- sessionEvent-11g
+- sessionStats-10g
+- sessionStats-11g
+- sessionTimeModel-10g
+- sessionTimeModel-11g
+- sql-10g
+- sql-11g
+- systemEvent-10g
+- systemEvent-11g
+- systemStats-10g
+- systemStats-11g
+- systemTimeModel-10g
+- systemTimeModel-11g
+- tablespace-10g
+- tablespace-11g
