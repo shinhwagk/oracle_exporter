@@ -17,7 +17,7 @@ func init() {
 
 // NewLogHistoryCollector
 func NewLogHistoryCollector() Collector {
-	desc := createNewDesc("loghistory", "sequence", "Gauge metric with count of sessions by status and type", []string{"recid", "year", "month", "day", "hour", "minute"}, nil)
+	desc := createNewDesc("loghistory", "sequence", "Gauge metric with count of sessions by status and type", nil, nil)
 	return &logHistoryCollector{desc}
 }
 
@@ -29,25 +29,17 @@ func (c *logHistoryCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 	defer rows.Close()
 
 	for rows.Next() {
-		var r, y, m, d, h, mi string
 		var seq float64
 
-		if err = rows.Scan(&r, &y, &m, &d, &h, &mi, &seq); err != nil {
+		if err = rows.Scan(&seq); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, seq, r, y, m, d, h, mi)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, seq)
 	}
 	return nil
 }
 
 const logHistorySQL = `
-	SELECT recid,
-       TO_CHAR(first_time, 'YYYY'),
-       TO_CHAR(first_time, 'MM'),
-       TO_CHAR(first_time, 'DD'),
-       TO_CHAR(first_time, 'HH24'),
-			 TO_CHAR(first_time, 'MI'),
-			 sequence#
-  FROM v$log_history
+	SELECT MAX(sequence#) FROM v$log_history
  WHERE thread# = (SELECT instance_number FROM v$instance)
    AND first_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
