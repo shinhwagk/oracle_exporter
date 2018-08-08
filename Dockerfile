@@ -1,4 +1,6 @@
-FROM golang:1.10.1
+FROM golang:1.10.3
+
+ENV http_proxy http://10.65.193.52:8118
 
 RUN apt update
 RUN apt install -y libaio1
@@ -13,10 +15,13 @@ ENV LD_LIBRARY_PATH $INSTANT_CLIENT:$LD_LIBRARY_PATH
 
 ENV GOBIN /go/bin
 
-WORKDIR /opt
-ENTRYPOINT [ "./oracle_exporter" ]
+RUN git config --global http.proxy http://10.65.193.52:8118
 
-ADD oracle_exporter.go /opt/oracle_exporter.go
-ADD no-cache .
-RUN go get github.com/shinhwagk/oracle_exporter/collector
+RUN go get -v github.com/shinhwagk/oracle_exporter/collector
+WORKDIR /go/src/github.com/shinhwagk/oracle_exporter
+
+RUN go get -v
+
 RUN go build -o oracle_exporter
+
+ENTRYPOINT [ "./oracle_exporter" ]
