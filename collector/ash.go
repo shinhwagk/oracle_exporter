@@ -89,7 +89,7 @@ SELECT sample_id,
        session_type,
        (SELECT username FROM dba_users WHERE user_id = ash.user_id),
        nvl(sql_id, 'null'),
-       sql_opcode,
+       (SELECT name FROM audit_actions WHERE ash.sql_opcode = action),
        nvl(program, 'null'),
        nvl(machine, 'null'),
        decode(blocking_session, null, 'null', to_char(blocking_session))
