@@ -11,7 +11,7 @@ type sql11GCollector struct {
 }
 
 type sql10GCollector struct {
-	descs [7]*prometheus.Desc
+	descs [8]*prometheus.Desc
 }
 
 func init() {
@@ -40,7 +40,7 @@ func NewSQL11GCollector() Collector {
 
 // NewSQL10GCollector
 func NewSQL10GCollector() Collector {
-	descs := [7]*prometheus.Desc{
+	descs := [8]*prometheus.Desc{
 		createNewDesc(sQLSystemName, "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "executions_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
@@ -48,6 +48,7 @@ func NewSQL10GCollector() Collector {
 		createNewDesc(sQLSystemName, "disk_read_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "sort_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "user_io_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "parse_calls_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 	}
 	return &sql10GCollector{descs}
 }
@@ -93,8 +94,8 @@ func (c *sql10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 
 	for rows.Next() {
 		var sqlID, username, commandType, child string
-		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, uiwt float64
-		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &uiwt); err != nil {
+		var cpuTime, elapsedTime, executions, bufferGets, diskReads, sort, uiwt, pc float64
+		if err := rows.Scan(&sqlID, &child, &commandType, &username, &cpuTime, &elapsedTime, &bufferGets, &diskReads, &sort, &executions, &uiwt, &pc); err != nil {
 			return err
 		}
 
@@ -105,6 +106,8 @@ func (c *sql10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 		ch <- prometheus.MustNewConstMetric(c.descs[4], prometheus.CounterValue, diskReads, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[5], prometheus.CounterValue, sort, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, uiwt, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, pc, username, sqlID, commandType, child)
+
 	}
 	return nil
 }
@@ -134,6 +137,7 @@ SELECT sql_id,
 	sql10GSQL = `
 SELECT sql_id,
 			 child_number,
+			 (SELECT name FROM audit_actions WHERE s.command_type = action),
 			 parsing_schema_name,
 			 cpu_time,
 			 elapsed_time,
@@ -141,7 +145,8 @@ SELECT sql_id,
 			 disk_reads,
 			 sorts,
 			 executions,
-			 user_io_wait_time
+			 user_io_wait_time,
+			 parse_calls
 FROM v$sql s
 WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'`
 )
