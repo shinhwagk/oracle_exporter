@@ -7,7 +7,7 @@ import (
 )
 
 type sql11GCollector struct {
-	descs [19]*prometheus.Desc
+	descs [18]*prometheus.Desc
 }
 
 type sql10GCollector struct {
@@ -21,7 +21,7 @@ func init() {
 
 // NewSQL11GCollector
 func NewSQL11GCollector() Collector {
-	descs := [19]*prometheus.Desc{
+	descs := [18]*prometheus.Desc{
 		createNewDesc(sQLSystemName, "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "executions_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
