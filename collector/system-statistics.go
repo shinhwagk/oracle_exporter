@@ -42,7 +42,7 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 }
 
 const sysstatSQL = `
-SELECT decode(class, 1, 'User', 2, 'Read', 4, 'Enqueue', 8, 'Cache',  16, 'OS', 32, 'Real Application Clusters', 64, 'SQL', 128, 'Debug', 'null'),
+SELECT decode(class, 1, 'User', 2, 'Read', 4, 'Enqueue', 8, 'Cache', 16, 'OS', 32, 'Real Application Clusters', 64, 'SQL', 128, 'Debug', 'Other'),
 			 name,
 			 value
   FROM v$sysstat WHERE value >= 1`
