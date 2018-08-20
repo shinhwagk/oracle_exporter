@@ -6,89 +6,107 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type sysEventCollector struct {
-	descs [sysEventCollectorNumber]*prometheus.Desc
+type sysEvent11GCollector struct {
+	descs [sysEvent11GCollectorNumber]*prometheus.Desc
 }
 
-type sysClassCollector struct {
-	descs [sysClassCollectorNumber]*prometheus.Desc
+type sysEvent10GCollector struct {
+	descs [sysEvent10GCollectorNumber]*prometheus.Desc
 }
 
 func init() {
-	registerCollector("systemEvent-10g", NewSysEventCollector)
-	registerCollector("systemEvent-11g", NewSysEventCollector)
+	registerCollector("systemEvent-10g", NewSysEvent10GCollector)
+	registerCollector("systemEvent-11g", NewSysEvent11GCollector)
 }
 
 // NewSysEventCollector
-func NewSysEventCollector() Collector {
-	descs := [sysEventCollectorNumber]*prometheus.Desc{
+func NewSysEvent11GCollector() Collector {
+	descs := [sysEvent11GCollectorNumber]*prometheus.Desc{
 		createNewDesc("sysevent", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 		createNewDesc("sysevent", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "timeout_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "waits_pg_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "waited_time_pg_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "timeout_pg_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 	}
-	return &sysEventCollector{descs}
+	return &sysEvent11GCollector{descs}
 }
 
-// NewSysClassCollector
-func NewSysClassCollector() Collector {
-	descs := [sysClassCollectorNumber]*prometheus.Desc{
-		createNewDesc("sysclass", "waits_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
-		createNewDesc("sysclass", "waited_time_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
-		createNewDesc("sysclass", "waits_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
-		createNewDesc("sysclass", "waited_time_pg_total", "Generic counter metric from v$system_class view in Oracle.", []string{"class"}, nil),
+// NewSysEventCollector
+func NewSysEvent10GCollector() Collector {
+	descs := [sysEvent10GCollectorNumber]*prometheus.Desc{
+		createNewDesc("sysevent", "waits_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "waited_time_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
+		createNewDesc("sysevent", "timeout_total", "Generic counter metric from v$system_event view in Oracle.", []string{"event", "class"}, nil),
 	}
-	return &sysClassCollector{descs}
+	return &sysEvent10GCollector{descs}
 }
 
-func (c *sysEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(sysEventSQL)
+func (c *sysEvent11GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
+	rows, err := db.Query(sysEvent11GSQL)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var event, waitClass string
-		var waits, time float64
-		if err := rows.Scan(&waitClass, &event, &waits, &time); err != nil {
+		var event, class string
+		var waits, timeWaited, timeOut, waitsfg, timeWaitedfg, timeOutfg float64
+		if err := rows.Scan(&class, &event, &waits, &timeWaited, &timeOut, &waitsfg, &timeWaitedfg, &timeOutfg); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, event, waitClass)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, time, event, waitClass)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, event, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeWaited, event, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, timeOut, event, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[3], prometheus.CounterValue, waitsfg, event, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[4], prometheus.CounterValue, timeWaitedfg, event, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[5], prometheus.CounterValue, timeOutfg, event, class)
 	}
 	return nil
 }
 
-func (c *sysClassCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(sysClassSQL)
+func (c *sysEvent10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
+	rows, err := db.Query(sysEvent10GSQL)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var class string
-		var waits, time, waitspg, timepg float64
-		if err := rows.Scan(&class, &waits, &time, &waitspg, &timepg); err != nil {
+		var event, class string
+		var waits, timeWaited, timeOut float64
+		if err := rows.Scan(&class, &event, &waits, &timeWaited, &timeOut); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, class)
-		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, time, class)
-		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, waitspg, class)
-		ch <- prometheus.MustNewConstMetric(c.descs[3], prometheus.CounterValue, timepg, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[0], prometheus.CounterValue, waits, event, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[1], prometheus.CounterValue, timeWaited, event, class)
+		ch <- prometheus.MustNewConstMetric(c.descs[2], prometheus.CounterValue, timeOut, event, class)
 	}
 	return nil
 }
 
 const (
-	sysEventCollectorNumber = 2
-	sysClassCollectorNumber = 4
-	sysEventSQL             = `
-SELECT n.wait_class, e.event, e.total_waits, e.time_waited_micro
-	FROM v$system_event e, v$event_name n
-WHERE n.name = e.event AND time_waited > 0`
-	sysClassSQL = `
-select wait_class, TOTAL_WAITS, TIME_WAITED, TOTAL_WAITS_FG, TIME_WAITED_FG
-  from v$system_wait_class`
+	sysEvent11GCollectorNumber = 6
+	sysEvent10GCollectorNumber = 3
+	sysEvent11GSQL             = `
+	SELECT n.wait_class,
+			 	 e.event,
+				 e.total_waits,
+				 e.time_waited_micro,
+				 e.total_timeouts,
+				 e.total_waits_fg,
+				 e.time_waited_micro_fg,
+				 e.total_timeouts_fg
+FROM v$system_event e, v$event_name n
+WHERE n.name = e.event`
+	sysEvent10GSQL = `
+SELECT n.wait_class,
+				e.event,
+			 e.total_waits,
+			 e.time_waited_micro,
+			 e.total_timeouts
+FROM v$system_event e, v$event_name n
+WHERE n.name = e.event`
 )
