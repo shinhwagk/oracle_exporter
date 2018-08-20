@@ -11,7 +11,7 @@ type sql11GCollector struct {
 }
 
 type sql10GCollector struct {
-	descs [15]*prometheus.Desc
+	descs [14]*prometheus.Desc
 }
 
 func init() {
@@ -32,27 +32,36 @@ func NewSQL11GCollector() Collector {
 		createNewDesc(sQLSystemName, "phy_read_request_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "phy_write_bytes_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "phy_write_request_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		createNewDesc(sQLSystemName, "user_io_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		createNewDesc(sQLSystemName, "parse_calls_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "parse_call_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "application_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "concurrency_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "cluster_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "user_io_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "plsql_exec_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "java_exec_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "rows_processed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 	}
+
 	return &sql11GCollector{descs}
 }
 
 // NewSQL10GCollector  .
 func NewSQL10GCollector() Collector {
-	descs := [15]*prometheus.Desc{
+	descs := [14]*prometheus.Desc{
 		createNewDesc(sQLSystemName, "cpu_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "elapsed_time_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "executions_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "buffer_gets_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "disk_read_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "sort_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		createNewDesc(sQLSystemName, "user_io_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
-		createNewDesc(sQLSystemName, "parse_calls_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "parse_call_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 		createNewDesc(sQLSystemName, "application_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "concurrency_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "cluster_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "user_io_wait_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "plsql_exec_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "java_exec_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
+		createNewDesc(sQLSystemName, "rows_processed_total", "Generic counter metric from v$sesstat view in Oracle.", []string{"username", "sql_id", "command", "child"}, nil),
 	}
 	return &sql10GCollector{descs}
 }
@@ -115,15 +124,14 @@ func (c *sql10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 		ch <- prometheus.MustNewConstMetric(c.descs[3], prometheus.CounterValue, bufferGets, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[4], prometheus.CounterValue, diskReads, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[5], prometheus.CounterValue, sort, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, uiwt, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, pc, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[8], prometheus.CounterValue, awt, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[9], prometheus.CounterValue, cwt, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[10], prometheus.CounterValue, cwt2, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[11], prometheus.CounterValue, uiwt, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[12], prometheus.CounterValue, pet, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[13], prometheus.CounterValue, jet, username, sqlID, commandType, child)
-		ch <- prometheus.MustNewConstMetric(c.descs[14], prometheus.CounterValue, rp, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[6], prometheus.CounterValue, pc, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[7], prometheus.CounterValue, awt, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[8], prometheus.CounterValue, cwt, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[9], prometheus.CounterValue, cwt2, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[10], prometheus.CounterValue, uiwt, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[11], prometheus.CounterValue, pet, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[12], prometheus.CounterValue, jet, username, sqlID, commandType, child)
+		ch <- prometheus.MustNewConstMetric(c.descs[13], prometheus.CounterValue, rp, username, sqlID, commandType, child)
 
 	}
 	return nil
