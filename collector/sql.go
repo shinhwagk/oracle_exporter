@@ -163,7 +163,7 @@ SELECT sql_id,
 			 java_exec_time,
 			 rows_processed
   FROM v$sql s
- WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'`
+ WHERE last_active_time >= TRUNC(sysdate, 'MI') - 2 / 24 / 60 AND is_obsolete ='N'`
 
 	sql10GSQL = `
 SELECT sql_id,
@@ -185,5 +185,5 @@ SELECT sql_id,
 			 java_exec_time,
 			 rows_processed
 FROM v$sql s
-WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'`
+WHERE last_active_time >= TRUNC(sysdate, 'MI') - 2 / 24 / 60 AND is_obsolete ='N'`
 )
