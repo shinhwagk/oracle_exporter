@@ -103,7 +103,7 @@ FROM v$system_event e, v$event_name n
 WHERE n.name = e.event`
 	sysEvent10GSQL = `
 SELECT n.wait_class,
-				e.event,
+			 e.event,
 			 e.total_waits,
 			 e.time_waited_micro,
 			 e.total_timeouts

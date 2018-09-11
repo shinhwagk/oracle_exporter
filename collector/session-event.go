@@ -16,7 +16,9 @@ type sessClassCollector struct {
 
 func init() {
 	registerCollector("sessionEvent-10g", NewSessEventCollector)
+	registerCollector("sessionClass-10g", NewSessEventCollector)
 	registerCollector("sessionEvent-11g", NewSessEventCollector)
+	registerCollector("sessionClass-11g", NewSessEventCollector)
 }
 
 // NewSessEventCollector desc
@@ -48,7 +50,7 @@ func (c *sessEventCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) err
 	for rows.Next() {
 		var username, event, class, sid string
 		var waits, timeWaited, timeOut float64
-		if err := rows.Scan(&sid, &username, &event, &class, &waits, &timeWaited, &timeOut); err != nil {
+		if err := rows.Scan(&sid, &username, &class, &event, &waits, &timeWaited, &timeOut); err != nil {
 			return err
 		}
 
@@ -82,30 +84,28 @@ func (c *sessClassCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) err
 const (
 	sessEventSQL = `
 SELECT ss.sid,
-       ss.username,
-			 se.event,
+			 ss.username,
 			 se.wait_class,
-       sum(se.total_waits),
-			 sum(se.time_waited_micro),
-			 sum(se.TOTAL_TIMEOUTS)
+			 se.event,
+       SUM(se.total_waits),
+			 SUM(se.time_waited_micro),
+			 SUM(se.total_timeouts)
   FROM v$session_event se, v$session ss
- where ss.sid = se.sid
-	 and se.total_waits > 0
-	 and se.wait_class <> 'Idle'
-   and ss.username is not null
- group by ss.sid, ss.username, se.event, se.wait_class`
+ WHERE ss.sid = se.sid
+	 AND se.wait_class <> 'Idle'
+   AND ss.username IS NOT NULL
+ GROUP BY ss.sid, ss.username, se.event, se.wait_class`
 
 	sessClassSQL = `
-select swc.sid,
-	swc.serial#,
-	swc.wait_class,
-	swc.TOTAL_WAITS,
-	swc.time_waited,
-	s.username
-from V$SESSION_WAIT_CLASS swc, v$session s
-where swc.sid = s.sid
-	and swc.serial# = s.serial#
-	and s.username is not null
-	and swc.wait_class <> 'Idle'
-	and swc.TOTAL_WAITS > 0`
+SELECT swc.sid,
+			 swc.serial#,
+			 swc.wait_class,
+			 swc.total_waits,
+			 swc.time_waited,
+			 s.username
+FROM v$session_wait_class swc, v$session s
+WHERE swc.sid = s.sid
+	AND swc.serial# = s.serial#
+	AND s.username IS NOT NULL
+	AND swc.wait_class <> 'Idle'`
 )
