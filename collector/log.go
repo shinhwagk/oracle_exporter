@@ -42,5 +42,4 @@ func (c *logCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 
 const logSQL = `
 SELECT sequence# FROM v$log
- WHERE thread# = (SELECT instance_number FROM v$instance) AND status = 'CURRENT'
- AND first_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60`
+ WHERE thread# = (SELECT instance_number FROM v$instance) AND status = 'CURRENT'`
