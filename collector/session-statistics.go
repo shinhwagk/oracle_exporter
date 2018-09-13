@@ -17,7 +17,7 @@ func init() {
 
 // NewSesstatCollector .
 func NewSesstatCollector() Collector {
-	desc := createNewDesc("session", "statistic", "empty", []string{"class", "name", "username", "sid"}, nil)
+	desc := createNewDesc("session", "statistic", "empty", []string{"class", "name", "username", "sid", "serial"}, nil)
 	return &sesstatCollector{desc}
 }
 
@@ -29,19 +29,19 @@ func (c *sesstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 	defer rows.Close()
 
 	for rows.Next() {
-		var sid, name, uname, class string
+		var sid, serial, name, uname, class string
 		var value float64
-		if err := rows.Scan(&sid, &name, &uname, &class, &value); err != nil {
+		if err := rows.Scan(&sid, &serial, &name, &uname, &class, &value); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, value, class, name, uname, sid)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, value, class, name, uname, sid, serial)
 	}
 	return nil
 }
 
 const sesstatSQL = `
-SELECT s.sid, sn.name, s.username,
+SELECT s.sid, s.serial#, sn.name, s.username,
        decode(sn.class,
               1,  'User',
               2,  'Read',
@@ -50,13 +50,12 @@ SELECT s.sid, sn.name, s.username,
               16, 'OS',
               32, 'Real Application Clusters',
               64, 'SQL',
-              128, 'Debug', 'null'),
+              128, 'Debug', 'Other'),
 				ss.value
 FROM v$sesstat ss, v$statname sn, v$session s
 WHERE s.sid = ss.sid
 	AND ss.statistic# = sn.statistic#
 	AND s.username IS NOT NULL
-  AND ss.value >= 1
   AND sn.name IN ('parse count (total)',	
                    'parse count (hard)',	
                    'parse count (failures)',	

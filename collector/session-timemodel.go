@@ -17,7 +17,7 @@ func init() {
 
 // NewSessTimeModelCollector .
 func NewSessTimeModelCollector() Collector {
-	desc := createNewDesc("session", "time_model", "oracle session level time model.", []string{"sid", "name", "username"}, nil)
+	desc := createNewDesc("session", "time_model", "oracle session level time model.", []string{"sid", "serial", "name", "username"}, nil)
 	return &sessTimeModelCollector{desc}
 }
 
@@ -29,12 +29,12 @@ func (c *sessTimeModelCollector) Update(db *sql.DB, ch chan<- prometheus.Metric)
 	defer rows.Close()
 
 	for rows.Next() {
-		var sid, uname, sname string
+		var sid, serial, uname, sname string
 		var value float64
-		if err := rows.Scan(&sid, &uname, &sname, &value); err != nil {
+		if err := rows.Scan(&sid, &serial, &uname, &sname, &value); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, value, sid, sname, uname)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, value, sid, serial, sname, uname)
 	}
 	return nil
 }
@@ -42,7 +42,7 @@ func (c *sessTimeModelCollector) Update(db *sql.DB, ch chan<- prometheus.Metric)
 const (
 	sessTimeModelSystemName = "sesstimemodel"
 	sessTimeModelSQL        = `
-	SELECT s.sid, s.username, stm.stat_name, SUM(stm.value) FROM v$sess_time_model stm, v$session s
-  WHERE stm.sid = s.sid AND s.username IS NOT NULL AND stm.value >= 1
-  GROUP BY s.username, stm.stat_name, s.sid`
+	SELECT s.sid, s.serial#, s.username, stm.stat_name, stm.value
+	FROM v$sess_time_model stm, v$session s
+  WHERE stm.sid = s.sid AND s.username IS NOT NULL`
 )
