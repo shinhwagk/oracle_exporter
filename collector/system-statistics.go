@@ -36,7 +36,6 @@ func (c *sysstatCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 		}
 
 		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.CounterValue, value, class, name)
-
 	}
 	return nil
 }
