@@ -26,7 +26,7 @@ func NewASH11GCollector() Collector {
 
 // NewASH10GCollector
 func NewASH10GCollector() Collector {
-	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opcode", "program", "machine"}, nil)
+	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opname", "program", "machine"}, nil)
 	return &ash10GCollector{desc}
 }
 
