@@ -40,8 +40,7 @@ func (c *sessTimeModelCollector) Update(db *sql.DB, ch chan<- prometheus.Metric)
 }
 
 const (
-	sessTimeModelSystemName = "sesstimemodel"
-	sessTimeModelSQL        = `
+	sessTimeModelSQL = `
 	SELECT s.sid, s.serial#, s.username, stm.stat_name, stm.value
 	FROM v$sess_time_model stm, v$session s
   WHERE stm.sid = s.sid AND s.username IS NOT NULL`
