@@ -84,5 +84,5 @@ WHERE s.sid = ss.sid
 									 'redo size',
 									 'leaf node 90-10 splits',
 									 'leaf node splits',
-									 'session logical reads'),
-									 'sorts (disk)'`
+									 'session logical reads',
+									 'sorts (disk)')`
