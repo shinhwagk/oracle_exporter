@@ -1,0 +1,11 @@
+groups:
+  - name: aggregrate 
+    rules:
+      - record: oracle_session_time_model_sum
+        expr: sum(idelta(oracle_session_time_model[2m])) by(db_name,inst,username,name)
+      - record: oracle_user_disk_read_sum
+        expr: sum(idelta(oracle_session_statistic{name="physical read total bytes"}[2m])) by(db_name,inst,username) / 1024 / 1024
+      - record: oracle_active_session_max_seconds
+        expr: ceil(max(sum(oracle_ash_sample) by(db_name,inst,sample_id)) by(db_name,inst))
+      - record: oracle_active_session_user_max_seconds
+        expr: ceil(max by(db_name,inst,username) (sum by(db_name,inst,sample_id,username) (oracle_ash_sample)))
