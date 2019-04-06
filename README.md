@@ -1,3 +1,8 @@
+### Usage
+```sh
+export DATA_SOURCE_NAME=${ip}:${port}/${service_name}
+./oracle_exporter-2.4.6.linux-amd64
+```
 ### metrics 11g,12c
 - ash-10g
 - ash-11g
