@@ -43,8 +43,7 @@ func (c *segmentSizeCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) e
 }
 
 const segmentSizeSQL = `
-SELECT owner, segment_name, segment_type, tablespace_name, sum(bytes) bytes
+SELECT owner, segment_name, segment_type, tablespace_name, sum(bytes)
   FROM dba_segments
- WHERE tablespace_name NOT IN ('SYSTEM')
- GROUP BY owner, segment_name, segment_type, tablespace_name
- ORDER BY 5 DESC`
+ WHERE tablespace_name NOT IN ('SYSTEM','SYSAUX')
+ GROUP BY owner, segment_name, segment_type, tablespace_name`

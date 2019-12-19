@@ -4,7 +4,8 @@
 	"dockerFile": "Dockerfile",
 	"settings": {
 		"terminal.integrated.shell.linux": "/bin/bash",
-		"go.useLanguageServer": true
+		"go.useLanguageServer": true,
+		"go.autocompleteUnimportedPackages": true
 	},
 	"extensions": [
 		"ms-vscode.go"
