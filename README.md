@@ -26,3 +26,5 @@ export DATA_SOURCE_NAME=${ip}:${port}/${service_name}
 - systemTimeModel-11g
 - tablespace-10g
 - tablespace-11g
+- segmentSize-10g
+- segmentSize-11g

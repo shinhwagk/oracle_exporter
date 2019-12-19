@@ -1,0 +1,12 @@
+{
+	"name": "oracle_exporter",
+	// "context": "..",
+	"dockerFile": "Dockerfile",
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"go.useLanguageServer": true
+	},
+	"extensions": [
+		"ms-vscode.go"
+	]
+}
