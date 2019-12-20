@@ -1,11 +1,12 @@
 {
 	"name": "oracle_exporter",
-	// "context": "..",
 	"dockerFile": "Dockerfile",
 	"settings": {
 		"terminal.integrated.shell.linux": "/bin/bash",
 		"go.useLanguageServer": true,
-		"go.autocompleteUnimportedPackages": true
+		"go.autocompleteUnimportedPackages": true,
+		"go.formatTool": "gofmt",
+		"editor.formatOnSave": true
 	},
 	"extensions": [
 		"ms-vscode.go"

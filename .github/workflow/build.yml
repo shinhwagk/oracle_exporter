@@ -1,3 +1,8 @@
-action "action a" {
-  uses = "./action-a/"
-}
+name: build
+on: [push]
+jobs:
+  build:
+    runs-on: [ubuntu-18.04]
+    steps:
+      - uses: actions/setup-go@v1
+      - run: go build -o oracle_exporter

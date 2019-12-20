@@ -6,23 +6,22 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type segmentSizeCollector struct {
-	descs *prometheus.Desc
+type segmentCollector struct {
+	desc *prometheus.Desc
 }
 
 func init() {
-	registerCollector("segmentSize-10g", NewSegmentSizeCollector)
-	registerCollector("segmentSize-11g", NewSegmentSizeCollector)
+	registerCollector("segment-10g", NewSegmentCollector)
+	registerCollector("segment-11g", NewSegmentCollector)
 }
 
-// NewSegmentSizeCollector
-func NewSegmentSizeCollector() Collector {
-	descs :=   createNewDesc("segmentSize", "bytes", "Generic counter metric of segmentSizes bytes in Oracle.", []string{"ownerm","name","type","tablespace"}, nil)
-
-	return &segmentSizeCollector{descs}
+// NewSegmentCollector
+func NewSegmentCollector() Collector {
+	descs := createNewDesc("segment", "bytes", "collect segment size", []string{"owner", "name", "type", "tablespace"}, nil)
+	return &segmentCollector{descs}
 }
 
-func (c *segmentSizeCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
+func (c *segmentCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
 	rows, err := db.Query(segmentSizeSQL)
 	if err != nil {
 		return err
@@ -30,14 +29,14 @@ func (c *segmentSizeCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) e
 	defer rows.Close()
 
 	for rows.Next() {
-		var owner,segmentName,segmentType,tablespaceName string
-		var bytes  float64
+		var owner, sName, sType, tsName string
+		var bytes float64
 
-		if err := rows.Scan(&owner,&segmentName,&segmentType,&tablespaceName,&bytes); err != nil {
+		if err := rows.Scan(&owner, &sName, &sType, &tsName, &bytes); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.descs, prometheus.GaugeValue, bytes, tablespaceName)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, bytes, owner, sName, sType, tsName)
 	}
 	return nil
 }

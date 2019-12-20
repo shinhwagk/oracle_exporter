@@ -132,7 +132,6 @@ func (c *sql10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 		ch <- prometheus.MustNewConstMetric(c.descs[11], prometheus.CounterValue, pet, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[12], prometheus.CounterValue, jet, username, sqlID, commandType, child)
 		ch <- prometheus.MustNewConstMetric(c.descs[13], prometheus.CounterValue, rp, username, sqlID, commandType, child)
-
 	}
 	return nil
 }
