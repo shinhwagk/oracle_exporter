@@ -34,7 +34,7 @@ func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 
 	for rows.Next() {
 		var tablespaceName string
-		var bytes, maxBytes, bytesFree float64
+		var bytesFree, bytes, maxBytes float64
 
 		if err := rows.Scan(&tablespaceName, &bytesFree, &bytes, &maxBytes); err != nil {
 			return err
@@ -48,10 +48,10 @@ func (c *tablespaceCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) er
 }
 
 const tablespaceSQL = `
-SELECT ddf.tablespace_name, nvl(dfs.bytes, 0) free, ddf.bytes, ddf.MAXBYTES
-  FROM (select tablespace_name, sum(DECODE(MAXBYTES, 0, bytes, MAXBYTES)) maxbytes, sum(bytes) bytes
-          from dba_data_files
-         group by tablespace_name) ddf,
+SELECT ddf.tablespace_name, NVL(dfs.bytes, 0) free, ddf.bytes, ddf.maxbytes
+  FROM (SELECT tablespace_name, SUM(DECODE(maxbytes, 0, bytes, maxbytes)) maxbytes, SUM(bytes) bytes
+          FROM dba_data_files
+         GROUP BY tablespace_name) ddf,
        dba_tablespaces dt,
-       (select tablespace_name, sum(bytes) bytes from dba_free_space group by tablespace_name) dfs
- WHERE ddf.tablespace_name = dt.tablespace_name and dt.tablespace_name = dfs.tablespace_name(+)`
+       (SELECT tablespace_name, SUM(bytes) bytes FROM dba_free_space GROUP BY tablespace_name) dfs
+ WHERE ddf.tablespace_name = dt.tablespace_name AND dt.tablespace_name = dfs.tablespace_name(+)`
