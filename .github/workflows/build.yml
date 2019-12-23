@@ -9,3 +9,16 @@ jobs:
         with:
           go-version: 1.13.5
       - run: go build -o oracle_exporter
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this Release
+            - add segment
+            - Second Change
+          draft: false
+          prerelease: true
