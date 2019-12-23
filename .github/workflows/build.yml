@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-go@v1
         with:
           go-version: 1.13.5
-      - run: go build -o oracle_exporter
+      - run: go build -o oracle_exporter-${{ github.ref }}.linux-amd64
       - name: Create Release
         uses: actions/create-release@v1
         env:
