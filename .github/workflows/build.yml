@@ -26,7 +26,7 @@ jobs:
             - add metric segment
           draft: false
           prerelease: true
-      - name: tar.gz
+      - name: Compress
         run: tar zcvf oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64.tar.gz oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.1
