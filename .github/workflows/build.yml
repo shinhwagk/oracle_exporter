@@ -26,12 +26,14 @@ jobs:
             - add metric segment
           draft: false
           prerelease: true
+      - name: tar.gz
+        run: tar zcvf oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64.tar.gz oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64
-          asset_name: oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64
+          asset_path: ./oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64.tar.gz
+          asset_name: oracle_exporter-${{ steps.tagName.outputs.tag }}.linux-amd64.tar.gz
           asset_content_type: application/octet-stream
