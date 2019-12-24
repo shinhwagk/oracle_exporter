@@ -44,5 +44,5 @@ func (c *segmentCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error
 const segmentSizeSQL = `
 SELECT owner, segment_name, segment_type, tablespace_name, sum(bytes)
   FROM dba_segments
- WHERE tablespace_name NOT IN ('SYSTEM','SYSAUX') AND tablespace_name not like 'UNDOTBS%'
+ WHERE tablespace_name NOT IN ('SYSTEM','SYSAUX') AND tablespace_name NOT LIKE 'UNDOTBS%'
  GROUP BY owner, segment_name, segment_type, tablespace_name`
