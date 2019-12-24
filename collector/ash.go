@@ -20,13 +20,13 @@ func init() {
 
 // NewASH11GCollector
 func NewASH11GCollector() Collector {
-	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opname", "program", "machine"}, nil)
+	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "sid", "serial", "event", "type", "username", "sql_id", "opname", "program", "machine", "blocking"}, nil)
 	return &ash11GCollector{desc}
 }
 
 // NewASH10GCollector
 func NewASH10GCollector() Collector {
-	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "session_id", "session_serial", "event", "session_type", "username", "sql_id", "opname", "program", "machine"}, nil)
+	desc := createNewDesc("ash", "sample", "Gauge metric with count of sessions by status and type", []string{"sample_id", "sid", "serial", "event", "type", "username", "sql_id", "opname", "program", "machine", "blocking"}, nil)
 	return &ash10GCollector{desc}
 }
 
@@ -43,7 +43,7 @@ func (c *ash11GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 		if err = rows.Scan(&sei, &si, &ssi, &e, &st, &u, &sli, &so, &p, &m, &bs); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, float64(1), sei, si, ssi, e, st, u, sli, so, p, m)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, float64(1), sei, si, ssi, e, st, u, sli, so, p, m, bs)
 	}
 	return nil
 }
@@ -61,7 +61,7 @@ func (c *ash10GCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error 
 		if err = rows.Scan(&sei, &si, &ssi, &e, &st, &u, &sli, &so, &p, &m, &bs); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, float64(1), sei, si, ssi, e, st, u, sli, so, p, m)
+		ch <- prometheus.MustNewConstMetric(c.desc, prometheus.GaugeValue, float64(1), sei, si, ssi, e, st, u, sli, so, p, m, bs)
 	}
 	return nil
 }
@@ -71,28 +71,28 @@ const (
 SELECT sample_id,
        session_id,
        session_serial#,
-       decode(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event),
+       DECODE(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event),
        session_type,
        (SELECT username FROM dba_users WHERE user_id = ash.user_id),
-       nvl(sql_id, 'null'),
-       nvl(sql_opname, 'null'),
-       nvl(program, 'null'),
-       nvl(machine, 'null'),
-       decode(blocking_session, null, 'null', to_char(blocking_session))
+       NVL(sql_id, 'null'),
+       NVL(sql_opname, 'null'),
+       NVL(program, 'null'),
+	   NVL(machine, 'null'),
+	   TO_CHAR(NVL(blocking_session, 0))
   FROM v$active_session_history ash
- WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')`
+ WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND sample_time < TRUNC(sysdate, 'MI')`
 	ashSQL10G = `
 SELECT sample_id,
        session_id,
        session_serial#,
-       decode(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event),
+       DECODE(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event),
        session_type,
        (SELECT username FROM dba_users WHERE user_id = ash.user_id),
-       nvl(sql_id, 'null'),
+       NVL(sql_id, 'null'),
        (SELECT name FROM audit_actions WHERE ash.sql_opcode = action),
-       nvl(program, 'null'),
-       nvl(machine, 'null'),
-       decode(blocking_session, null, 'null', to_char(blocking_session))
+       NVL(program, 'null'),
+       NVL(machine, 'null'),
+       TO_CHAR(NVL(blocking_session, 0))
   FROM v$active_session_history ash
- WHERE SAMPLE_TIME >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND SAMPLE_TIME < TRUNC(sysdate, 'MI')`
+ WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND sample_time < TRUNC(sysdate, 'MI')`
 )
