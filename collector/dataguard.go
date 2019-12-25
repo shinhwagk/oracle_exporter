@@ -23,7 +23,7 @@ func NewDadataguardCollector() Collector {
 }
 
 func (c *dataguardCollector) Update(db *sql.DB, ch chan<- prometheus.Metric) error {
-	rows, err := db.Query(sessionSQL)
+	rows, err := db.Query(dataguardSQL)
 	if err != nil {
 		return err
 	}
