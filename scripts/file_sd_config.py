@@ -29,7 +29,7 @@ class OracleDatabase:
         c.execute("SELECT d.name, d.db_unique_name, d.database_role, i.version, i.instance_number, i.instance_name, i.host_name FROM v$instance i ,v$database d")
         name, uname, role, version, inst, inst_name, host = c.fetchone()
         c.close()
-        return name.lower(), uname.lower(), role.lower(), version, str(inst), inst_name.lower(), host.lower()
+        return name.lower(), uname.lower(), role.lower(), version[0:2], str(inst), inst_name.lower(), host.lower()
 
 
 def appendContainer(c, k, v):
@@ -78,12 +78,16 @@ class OracleExporter:
             groupName = 'oracle_'+oversion+"_p"
             appendContainer(container, groupName, config)
 
+        if self.ometa['inst'] == '1' and self.ometa["db_role"] == "primary":
+            groupName = 'oracle_'+oversion+"_p_i1"
+            appendContainer(container, groupName, config)
+
         if self.ometa["db_role"] == "physical standby":
             groupName = 'oracle_'+oversion+'_dg_ps'
             appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "physical standby" and self.ometa["inst"] == "1":
-            groupName = 'oracle_'+oversion+'_dg_ps_1'
+            groupName = 'oracle_'+oversion+'_dg_ps_i1'
             appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "logical standby":
