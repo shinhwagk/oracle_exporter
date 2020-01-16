@@ -67,7 +67,7 @@ class OracleExporter:
 
     def generateFileSdConfig(self, container):
         target = "{}:{}".format(self.deployIp, self.deployPort)
-        oversion = self.ometa['version'].split('.')[0]
+        oversion = self.ometa['version']
         dbrole = ''.join([i[0] for i in self.ometa['db_role'].split(' ')])
         config = {
             "targets": [target],
@@ -78,17 +78,17 @@ class OracleExporter:
             groupName = 'oracle_'+oversion+"_p"
             appendContainer(container, groupName, config)
 
-        if self.ometa['inst'] == '10' and self.ometa["db_role"] == "primary":
-            groupName = 'oracle_'+oversion+"_p_i1"
-            appendContainer(container, groupName, config)
+            if self.ometa['inst'] == '1':
+                groupName = 'oracle_'+oversion+"_p_i1"
+                appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "physical standby":
             groupName = 'oracle_'+oversion+'_dg_ps'
             appendContainer(container, groupName, config)
 
-        if self.ometa["db_role"] == "physical standby" and self.ometa["inst"] == "1":
-            groupName = 'oracle_'+oversion+'_dg_ps_i1'
-            appendContainer(container, groupName, config)
+            if self.ometa["inst"] == "1":
+                groupName = 'oracle_'+oversion+'_dg_ps_i1'
+                appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "logical standby":
             groupName = 'oracle_' + oversion + '_dg_ls'
