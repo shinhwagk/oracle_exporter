@@ -61,7 +61,7 @@ class OracleExporter:
             self.ometa['inst_name'], self.ometa['inst'], self.ometa['db_uname'])
 
         command = OracleExporter.commandTemplate(
-            node_exporeter_name, self.deployPort, self.ouser, self.opass, self.oip, self.oport, self.osvc, self.version)
+            node_exporeter_name, self.deployPort, self.version, self.oip, self.oport, self.osvc, self.ouser, self.opass)
 
         container.append(command)
 
@@ -90,7 +90,7 @@ class OracleExporter:
             appendContainer(container, groupName, config)
 
     @staticmethod
-    def commandTemplate(uname, port, version, oip, oport, ouser, opass, osvc):
+    def commandTemplate(uname, port, version, oip, oport, osvc, ouser, opass):
         return "./oracle_exporter.sh -n {} -p {} -c {}/{}@{}:{}/{} -v {}".format(uname, port, ouser, opass, oip, oport, osvc, version)
 
     @staticmethod
@@ -113,6 +113,7 @@ def servers():
 
 
 def main():
+    global port_start_number
     for zone, ip, svc, b in servers():
         print(ip)
         if b == 'false':
@@ -122,15 +123,16 @@ def main():
                                 ip, 1521, svc, zone, parms.version, parms.deployIp, port_start_number)
             oe.generateFileSdConfig(cc)
             oe.generateCommands(cm)
+            port_start_number += 1
             # od = OracleDatabase(ip, sve, zone)
             # od.createConnect()
             # od.closeConnect()
         except BaseException as e:
             print("{} {} connect exception: {}".format(ip, svc, e))
-        port_start_number += 1
 
     print(json.dumps(cc))
-    print(json.dumps(cm))
+    for m in cm:
+        print(m)
 # print(OracleExporter.start_scripts)
 # query:
 #   SELECT d.name, d.db_unique_name, d.database_role, i.version, i.instance_number, i.instance_name, i.host_name FROM v$instance i ,v$database d;
@@ -159,3 +161,4 @@ if __name__ == "__main__":
     cc = {}
     cm = []
     port_start_number = 9010
+    main()
