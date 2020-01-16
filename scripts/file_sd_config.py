@@ -78,7 +78,7 @@ class OracleExporter:
             groupName = 'oracle_'+oversion+"_p"
             appendContainer(container, groupName, config)
 
-        if self.ometa['inst'] == '1' and self.ometa["db_role"] == "primary":
+        if self.ometa['inst'] == '10' and self.ometa["db_role"] == "primary":
             groupName = 'oracle_'+oversion+"_p_i1"
             appendContainer(container, groupName, config)
 
