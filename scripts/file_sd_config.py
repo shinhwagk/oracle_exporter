@@ -68,20 +68,26 @@ class OracleExporter:
     def generateFileSdConfig(self, container):
         target = "{}:{}".format(self.deployIp, self.port_start_number)
         oversion = self.ometa['version'].split('.')[0]
-        isguard = self.ometa['db_role'] != 'PRIMARY'
         config = {
             "targets": [target],
             "labels": {"db_name": self.ometa['name'], "inst": self.ometa['inst'], "host": self.ometa['host'], 'vesrion': self.ometa['version'], 'db_uname': self.ometa['db_uname']}
         }
 
-        groupName = 'oracle_'+oversion+'_dg' if isguard else oversion
+        if self.ometa["db_role"] == "primary":
+            groupName = 'oracle_'+oversion
+            appendContainer(container, groupName, config)
 
-        appendContainer(container, groupName, config)
+        if self.ometa["db_role"] == "physical standby":
+            groupName = 'oracle_'+oversion+'_dg'
+            appendContainer(container, groupName, config)
 
-        if isguard and self.ometa["inst"] == "1":
+        if self.ometa["db_role"] == "physical standby" and self.ometa["inst"] == "1":
             groupName = 'oracle_'+oversion+'_dg_inst_1'
+            appendContainer(container, groupName, config)
 
-        appendContainer(container, groupName, config)
+        if self.ometa["db_role"] == "logical standby":
+            groupName = 'oracle_' + oversion + '_dg_lg'
+            appendContainer(container, groupName, config)
 
     @staticmethod
     def commandTemplate(uname, port, version, oip, oport, ouser, opass, osvc):
@@ -101,7 +107,7 @@ class OracleExporter:
 
 
 def servers():
-    with open('test.csv', encoding='UTF-8') as csvfile:
+    with open('servers.csv', encoding='UTF-8') as csvfile:
         spamreader = csv.reader(csvfile)
         return list(spamreader)
 
