@@ -78,15 +78,15 @@ class OracleExporter:
             appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "physical standby":
-            groupName = 'oracle_'+oversion+'_dg'
+            groupName = 'oracle_'+oversion+'_dg_ps'
             appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "physical standby" and self.ometa["inst"] == "1":
-            groupName = 'oracle_'+oversion+'_dg_inst_1'
+            groupName = 'oracle_'+oversion+'_dg_ps_1'
             appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "logical standby":
-            groupName = 'oracle_' + oversion + '_dg_lg'
+            groupName = 'oracle_' + oversion + '_dg_ls'
             appendContainer(container, groupName, config)
 
     @staticmethod
@@ -127,7 +127,6 @@ for zone, ip, svc, b in servers():
         # od.createConnect()
         # od.closeConnect()
     except BaseException as e:
-        print(e, "2222222222")
         print("{} {} connect exception".format(ip, svc))
 
 
