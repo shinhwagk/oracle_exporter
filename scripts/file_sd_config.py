@@ -40,10 +40,10 @@ def appendContainer(c, k, v):
 
 
 class OracleExporter:
-    port_start_number = 9010
+
     ometa = None
 
-    def __init__(self, ouser, opass, oip, oport, osvc, ozone, version, deployIp):
+    def __init__(self, ouser, opass, oip, oport, osvc, ozone, version, deployIp, deployPort):
         self.oip = oip
         self.oport = oport
         self.osvc = osvc
@@ -54,19 +54,19 @@ class OracleExporter:
         self.deployIp = deployIp
         self.ometa = OracleExporter.metaTemplate(
             *OracleDatabase(ouser, opass, oip, oport, osvc).getMeta())
+        self.deployPort = deployPort
 
     def generateCommands(self, container):
         node_exporeter_name = "{}_{}_{}".format(
             self.ometa['inst_name'], self.ometa['inst'], self.ometa['db_uname'])
 
         command = OracleExporter.commandTemplate(
-            node_exporeter_name, self.port_start_number, self.ouser, self.opass, self.oip, self.oport, self.osvc, self.version)
+            node_exporeter_name, self.deployPort, self.ouser, self.opass, self.oip, self.oport, self.osvc, self.version)
 
         container.append(command)
-        self.port_start_number += 1
 
     def generateFileSdConfig(self, container):
-        target = "{}:{}".format(self.deployIp, self.port_start_number)
+        target = "{}:{}".format(self.deployIp, self.deployPort)
         oversion = self.ometa['version'].split('.')[0]
         config = {
             "targets": [target],
@@ -74,7 +74,7 @@ class OracleExporter:
         }
 
         if self.ometa["db_role"] == "primary":
-            groupName = 'oracle_'+oversion
+            groupName = 'oracle_'+oversion+"p"
             appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "physical standby":
@@ -91,7 +91,7 @@ class OracleExporter:
 
     @staticmethod
     def commandTemplate(uname, port, version, oip, oport, ouser, opass, osvc):
-        return "./oracle_exporter.sh -n {} -p {} -c {}/{}@{}:{}/{} -v {}".format(uname, port, ouser, opass, oip, oport, svc, version)
+        return "./oracle_exporter.sh -n {} -p {} -c {}/{}@{}:{}/{} -v {}".format(uname, port, ouser, opass, oip, oport, osvc, version)
 
     @staticmethod
     def metaTemplate(name, un_name, role, version, inst_num, inst_name, host):
@@ -112,26 +112,25 @@ def servers():
         return list(spamreader)
 
 
-cc = {}
-cm = []
-for zone, ip, svc, b in servers():
-    print(ip)
-    if b == 'false':
-        continue
-    try:
-        oe = OracleExporter(parms.username, parms.password,
-                            ip, 1521, svc, zone, parms.version, parms.deployIp)
-        oe.generateFileSdConfig(cc)
-        # oe.generateCommands(cm)
-        # od = OracleDatabase(ip, sve, zone)
-        # od.createConnect()
-        # od.closeConnect()
-    except BaseException as e:
-        print("{} {} connect exception".format(ip, svc))
+def main():
+    for zone, ip, svc, b in servers():
+        print(ip)
+        if b == 'false':
+            continue
+        try:
+            oe = OracleExporter(parms.username, parms.password,
+                                ip, 1521, svc, zone, parms.version, parms.deployIp, port_start_number)
+            oe.generateFileSdConfig(cc)
+            oe.generateCommands(cm)
+            # od = OracleDatabase(ip, sve, zone)
+            # od.createConnect()
+            # od.closeConnect()
+        except BaseException as e:
+            print("{} {} connect exception: {}".format(ip, svc, e))
+        port_start_number += 1
 
-
-print(json.dumps(cc))
-print(json.dumps(cm))
+    print(json.dumps(cc))
+    print(json.dumps(cm))
 # print(OracleExporter.start_scripts)
 # query:
 #   SELECT d.name, d.db_unique_name, d.database_role, i.version, i.instance_number, i.instance_name, i.host_name FROM v$instance i ,v$database d;
@@ -154,3 +153,9 @@ print(json.dumps(cm))
 #         "inst_name": inst_name,
 #         "host": host
 #     }
+
+
+if __name__ == "__main__":
+    cc = {}
+    cm = []
+    port_start_number = 9010
