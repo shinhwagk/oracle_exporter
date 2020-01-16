@@ -29,7 +29,7 @@ class OracleDatabase:
         c.execute("SELECT d.name, d.db_unique_name, d.database_role, i.version, i.instance_number, i.instance_name, i.host_name FROM v$instance i ,v$database d")
         name, uname, role, version, inst, inst_name, host = c.fetchone()
         c.close()
-        return name, uname, role, version, inst, inst_name, host
+        return name.lower(), uname.lower(), role.lower(), version, str(inst), inst_name.lower(), host.lower()
 
 
 def appendContainer(c, k, v):
@@ -74,12 +74,12 @@ class OracleExporter:
             "labels": {"db_name": self.ometa['name'], "inst": self.ometa['inst'], "host": self.ometa['host'], 'vesrion': self.ometa['version'], 'db_uname': self.ometa['db_uname']}
         }
 
-        groupName = oversion+'_dg' if isguard else oversion
+        groupName = 'oracle_'+oversion+'_dg' if isguard else oversion
 
         appendContainer(container, groupName, config)
 
         if isguard and self.ometa["inst"] == "1":
-            groupName = oversion+'_dg1'
+            groupName = 'oracle_'+oversion+'_dg_inst_1'
 
         appendContainer(container, groupName, config)
 
@@ -125,8 +125,8 @@ for zone, ip, svc, b in servers():
         print("{} {} connect exception".format(ip, svc))
 
 
-print(cc)
-print(cm)
+print(json.dumps(cc))
+print(json.dumps(cm))
 # print(OracleExporter.start_scripts)
 # query:
 #   SELECT d.name, d.db_unique_name, d.database_role, i.version, i.instance_number, i.instance_name, i.host_name FROM v$instance i ,v$database d;
