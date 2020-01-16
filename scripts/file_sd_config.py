@@ -58,7 +58,7 @@ class OracleExporter:
 
     def generateCommands(self, container):
         node_exporeter_name = "{}_{}_{}".format(
-            self.ometa['inst_name'], self.ometa['inst'], self.ometa['db_uname'])
+            self.ometa['name'], self.ometa['inst'], self.ometa['db_uname'])
 
         command = OracleExporter.commandTemplate(
             node_exporeter_name, self.deployPort, self.version, self.oip, self.oport, self.osvc, self.ouser, self.opass)
@@ -68,13 +68,14 @@ class OracleExporter:
     def generateFileSdConfig(self, container):
         target = "{}:{}".format(self.deployIp, self.deployPort)
         oversion = self.ometa['version'].split('.')[0]
+        dbrole = ''.join([i[0] for i in self.ometa['db_role'].split(' ')])
         config = {
             "targets": [target],
-            "labels": {"db_name": self.ometa['name'], "inst": self.ometa['inst'], "host": self.ometa['host'], 'vesrion': self.ometa['version'], 'db_uname': self.ometa['db_uname']}
+            "labels": {"name": self.ometa['name'], "inst": self.ometa['inst'], 'vesrion': self.ometa['version'], 'role': dbrole}
         }
 
         if self.ometa["db_role"] == "primary":
-            groupName = 'oracle_'+oversion+"p"
+            groupName = 'oracle_'+oversion+"_p"
             appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "physical standby":
@@ -113,7 +114,9 @@ def servers():
 
 
 def main():
-    global port_start_number
+    cc = {}
+    cm = []
+    port_start_number = parms.oexporter_start_post
     for zone, ip, svc, b in servers():
         print(ip)
         if b == 'false':
@@ -158,7 +161,5 @@ def main():
 
 
 if __name__ == "__main__":
-    cc = {}
-    cm = []
-    port_start_number = 9010
+
     main()
