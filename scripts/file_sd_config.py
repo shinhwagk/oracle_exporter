@@ -21,7 +21,7 @@ class OracleDatabase:
         self.conn = cx_Oracle.connect(
             "{}/{}@{}:{}/{}".format(self.ouser, self.opass, self.oip, self.oport, self.osvc))
 
-    def closeConnect(self):
+    async def closeConnect(self):
         self.conn.close()
 
     def getMeta(self):
@@ -29,7 +29,8 @@ class OracleDatabase:
         c.execute("SELECT d.name, d.db_unique_name, d.database_role, i.version, i.instance_number, i.instance_name, i.host_name FROM v$instance i ,v$database d")
         name, uname, role, version, inst, inst_name, host = c.fetchone()
         c.close()
-        return name.lower(), uname.lower(), role.lower(), version[0:2], str(inst), inst_name.lower(), host.lower()
+        self.closeConnect()
+        return {"name": name.lower(), "uname": uname.lower(), "role": role.lower(), "version": version[0:2], "inst": str(inst), "inst_name": inst_name.lower(), "host": host.lower()}
 
 
 def appendContainer(c, k, v):
@@ -41,37 +42,35 @@ def appendContainer(c, k, v):
 
 class OracleExporter:
 
-    ometa = None
-
-    def __init__(self, ouser, opass, ogroup, oip, oport, osvc, ozone, version, deployIp, deployPort):
+    def __init__(self, ouser, opass, ogroup, oip, oport, osvc, ozone, deployVersion, deployIp, deployPort):
         self.oip = oip
         self.oport = oport
         self.ogroup = ogroup
         self.osvc = osvc
         self.ozone = ozone
-        self.version = version
+        self.deployVersion = deployVersion
         self.ouser = ouser
         self.opass = opass
         self.deployIp = deployIp
-        self.ometa = OracleExporter.metaTemplate(
-            *OracleDatabase(ouser, opass, oip, oport, osvc).getMeta())
+        self.ometa = OracleDatabase(ouser, opass, oip, oport, osvc).getMeta()
+
         self.deployPort = deployPort
 
-    def generateCommands(self, container):
-        node_exporeter_name = "{}_{}_{}".format(
-            self.ometa['name'], self.ometa['inst'], self.ometa['db_uname'])
+    # def generateCommands(self, container):
+    #     node_exporeter_name = "{}_{}_{}".format(
+    #         self.ometa['name'], self.ometa['inst'], self.ometa['db_uname'])
 
-        command = OracleExporter.commandTemplate(
-            node_exporeter_name, self.deployPort, self.version, self.oip, self.oport, self.osvc, self.ouser, self.opass)
+    #     command = OracleExporter.commandTemplate(
+    #         node_exporeter_name, self.deployPort, self.version, self.oip, self.oport, self.osvc, self.ouser, self.opass)
 
-        container.append(command)
+    #     container.append(command)
 
     def generateFileSdConfig(self, container):
         target = "{}:{}".format(self.deployIp, self.deployPort)
         dbrole = ''.join([i[0] for i in self.ometa['db_role'].split(' ')])
         config = {
             "targets": [target],
-            "labels": {"db_name": self.ometa['name'], "db_inst": self.ometa['inst'], 'db_vesrion': self.ometa['version'], 'db_role': dbrole, "db_group": self.ogroup}
+            "labels": {"db_uname": self.ometa['uname'], "db_inst": self.ometa['inst'], 'db_vesrion': self.ometa['version'], 'db_role': dbrole, "db_group": self.ogroup}
         }
 
         oversion = self.ometa['version']
@@ -80,6 +79,9 @@ class OracleExporter:
 
         if int(oversion) >= 12:
             oversion += 'c'
+
+        groupName = 'oracle_'+oversion
+        appendContainer(container, groupName, config)
 
         if self.ometa["db_role"] == "primary":
             groupName = 'oracle_'+oversion+"_p"
@@ -101,20 +103,16 @@ class OracleExporter:
             groupName = 'oracle_' + oversion + '_dg_ls'
             appendContainer(container, groupName, config)
 
-    @staticmethod
-    def commandTemplate(uname, port, version, oip, oport, osvc, ouser, opass):
-        return "./oracle_exporter.sh -n {} -p {} -c {}/{}@{}:{}/{} -v {}".format(uname, port, ouser, opass, oip, oport, osvc, version)
+    # def commandTemplate(self, uname, port, version, oip, oport, osvc, ouser, opass):
+    #     return "./oracle_exporter.sh -n {} -p {} -c {}/{}@{}:{}/{} -v {}".format(uname, port, ouser, opass, oip, oport, osvc, version)
 
-    @staticmethod
-    def metaTemplate(name, un_name, role, version, inst_num, inst_name, host):
+    def metaTemplate(self, ogroup, o_uname, role, version, inst_num):
         return {
-            'name': name,
-            'db_uname': un_name,
+            'db_group': ogroup,
+            'db_uname': o_uname,
             'db_role': role,
-            'version': version,
-            "inst": inst_num,
-            "inst_name": inst_name,
-            "host": host
+            'db_version': version,
+            "db_inst": inst_num
         }
 
 
@@ -124,16 +122,9 @@ def servers():
         return list(spamreader)
 
 
-# def save_file_sd_config(file_configs):
-#     for
-
-
-# def save_node_exporter_command():
-
-
 def main():
     file_configs = {}
-    oracle_exporter_commands = []
+    # oracle_exporter_commands = []
     port_start_number = parms.oexporter_start_post
     for o_zone, o_ip, o_service, is_configed, o_group in servers():
         print(o_ip)
@@ -143,36 +134,15 @@ def main():
             oe = OracleExporter(parms.username, parms.password, o_group,
                                 o_ip, 1521, o_service, o_zone, parms.version, parms.deployIp, port_start_number)
             oe.generateFileSdConfig(file_configs)
-            oe.generateCommands(oracle_exporter_commands)
+            # oe.generateCommands(oracle_exporter_commands)
             port_start_number += 1
         except BaseException as e:
             print("{} {} connect exception: {}".format(o_ip, o_service, e))
 
-    # print(json.dumps(cc))
-    for m in cm:
-        print(m)
-# print(OracleExporter.start_scripts)
-# query:
-#   SELECT d.name, d.db_unique_name, d.database_role, i.version, i.instance_number, i.instance_name, i.host_name FROM v$instance i ,v$database d;
-
-
-# def queryBaseInfo(ip):
-#     con = cx_Oracle.connect()
-#     cur = con.cursor()
-#     return [""]
-
-
-# def template(zone, name, un_name, role, version, inst_num, inst_name, host):
-#     return {
-#         'zone': zone,
-#         'db_name': name,
-#         'db_un_name': un_name,
-#         'db_role': role,
-#         'version': version,
-#         "inst": inst_num,
-#         "inst_name": inst_name,
-#         "host": host
-#     }
+    for name, config in file_configs.items():
+        f = open(name, '+w')
+        f.write(json.dumps(config))
+        f.close()
 
 
 if __name__ == "__main__":
