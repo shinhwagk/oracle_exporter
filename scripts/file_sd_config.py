@@ -67,31 +67,34 @@ class OracleExporter:
 
     def generateFileSdConfig(self, container):
         target = "{}:{}".format(self.deployIp, self.deployPort)
-        dbrole = ''.join([i[0] for i in self.ometa['db_role'].split(' ')])
+        dbrole = ''.join([i[0] for i in self.ometa['role'].split(' ')])
         config = {
             "targets": [target],
             "labels": {"db_uname": self.ometa['uname'], "db_inst": self.ometa['inst'], 'db_vesrion': self.ometa['version'], 'db_role': dbrole, "db_group": self.ogroup}
         }
 
         oversion = self.ometa['version']
-        if oversion in ["10", "11"]:
-            oversion += 'g'
 
         if int(oversion) >= 12:
             oversion += 'c'
 
+        if oversion in ["10", "11"]:
+            oversion += 'g'
+
         groupName = 'oracle_'+oversion
         appendContainer(container, groupName, config)
 
-        if self.ometa["db_role"] == "primary":
+        if self.ometa["role"] == "primary":
             groupName = 'oracle_'+oversion+"_p"
+            appendContainer(container, groupName, config)
+            groupName = 'oracle_p'
             appendContainer(container, groupName, config)
 
             if self.ometa['inst'] == '1':
                 groupName = 'oracle_'+oversion+"_p_i1"
                 appendContainer(container, groupName, config)
 
-        if self.ometa["db_role"] == "physical standby":
+        if self.ometa["role"] == "physical standby":
             groupName = 'oracle_'+oversion+'_dg_ps'
             appendContainer(container, groupName, config)
 
@@ -99,7 +102,7 @@ class OracleExporter:
                 groupName = 'oracle_'+oversion+'_dg_ps_i1'
                 appendContainer(container, groupName, config)
 
-        if self.ometa["db_role"] == "logical standby":
+        if self.ometa["role"] == "logical standby":
             groupName = 'oracle_' + oversion + '_dg_ls'
             appendContainer(container, groupName, config)
 
@@ -130,17 +133,15 @@ def main():
         print(o_ip)
         if is_configed == 'false':
             continue
-        try:
-            oe = OracleExporter(parms.username, parms.password, o_group,
-                                o_ip, 1521, o_service, o_zone, parms.version, parms.deployIp, port_start_number)
-            oe.generateFileSdConfig(file_configs)
-            # oe.generateCommands(oracle_exporter_commands)
-            port_start_number += 1
-        except BaseException as e:
-            print("{} {} connect exception: {}".format(o_ip, o_service, e))
+        oe = OracleExporter(parms.username, parms.password, o_group,
+                            o_ip, 1521, o_service, o_zone, parms.version, parms.deployIp, port_start_number)
+        oe.generateFileSdConfig(file_configs)
+        # oe.generateCommands(oracle_exporter_commands)
+        port_start_number += 1
 
     for name, config in file_configs.items():
-        f = open(name, '+w')
+        fname = '{}.json'.format(name)
+        f = open(fname, '+w')
         f.write(json.dumps(config))
         f.close()
 
