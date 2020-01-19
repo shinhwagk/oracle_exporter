@@ -43,9 +43,10 @@ class OracleExporter:
 
     ometa = None
 
-    def __init__(self, ouser, opass, oip, oport, osvc, ozone, version, deployIp, deployPort):
+    def __init__(self, ouser, opass, ogroup, oip, oport, osvc, ozone, version, deployIp, deployPort):
         self.oip = oip
         self.oport = oport
+        self.ogroup = ogroup
         self.osvc = osvc
         self.ozone = ozone
         self.version = version
@@ -67,12 +68,18 @@ class OracleExporter:
 
     def generateFileSdConfig(self, container):
         target = "{}:{}".format(self.deployIp, self.deployPort)
-        oversion = self.ometa['version']
         dbrole = ''.join([i[0] for i in self.ometa['db_role'].split(' ')])
         config = {
             "targets": [target],
-            "labels": {"name": self.ometa['name'], "inst": self.ometa['inst'], 'vesrion': self.ometa['version'], 'role': dbrole}
+            "labels": {"db_name": self.ometa['name'], "db_inst": self.ometa['inst'], 'db_vesrion': self.ometa['version'], 'db_role': dbrole, "db_group": self.ogroup}
         }
+
+        oversion = self.ometa['version']
+        if oversion in ["10", "11"]:
+            oversion += 'g'
+
+        if int(oversion) >= 12:
+            oversion += 'c'
 
         if self.ometa["db_role"] == "primary":
             groupName = 'oracle_'+oversion+"_p"
@@ -117,27 +124,31 @@ def servers():
         return list(spamreader)
 
 
+# def save_file_sd_config(file_configs):
+#     for
+
+
+# def save_node_exporter_command():
+
+
 def main():
-    cc = {}
-    cm = []
+    file_configs = {}
+    oracle_exporter_commands = []
     port_start_number = parms.oexporter_start_post
-    for zone, ip, svc, b in servers():
-        print(ip)
-        if b == 'false':
+    for o_zone, o_ip, o_service, is_configed, o_group in servers():
+        print(o_ip)
+        if is_configed == 'false':
             continue
         try:
-            oe = OracleExporter(parms.username, parms.password,
-                                ip, 1521, svc, zone, parms.version, parms.deployIp, port_start_number)
-            oe.generateFileSdConfig(cc)
-            oe.generateCommands(cm)
+            oe = OracleExporter(parms.username, parms.password, o_group,
+                                o_ip, 1521, o_service, o_zone, parms.version, parms.deployIp, port_start_number)
+            oe.generateFileSdConfig(file_configs)
+            oe.generateCommands(oracle_exporter_commands)
             port_start_number += 1
-            # od = OracleDatabase(ip, sve, zone)
-            # od.createConnect()
-            # od.closeConnect()
         except BaseException as e:
-            print("{} {} connect exception: {}".format(ip, svc, e))
+            print("{} {} connect exception: {}".format(o_ip, o_service, e))
 
-    print(json.dumps(cc))
+    # print(json.dumps(cc))
     for m in cm:
         print(m)
 # print(OracleExporter.start_scripts)
@@ -165,5 +176,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
