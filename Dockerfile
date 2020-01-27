@@ -1,7 +1,5 @@
 FROM golang:1.10.3
 
-ENV http_proxy http://10.65.193.52:8118
-
 RUN apt update
 RUN apt install -y libaio1
 
