@@ -13,8 +13,6 @@ ENV LD_LIBRARY_PATH $INSTANT_CLIENT:$LD_LIBRARY_PATH
 
 ENV GOBIN /go/bin
 
-RUN git config --global http.proxy http://10.65.193.52:8118
-
 RUN go get -v github.com/shinhwagk/oracle_exporter/collector
 WORKDIR /go/src/github.com/shinhwagk/oracle_exporter
 
