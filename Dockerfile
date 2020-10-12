@@ -23,8 +23,6 @@ RUN go get -v
 
 RUN go build -o oracle_exporter
 
-ENTRYPOINT [ "./oracle_exporter" ]
-
 FROM debian
 RUN apt update && apt install -y libaio1
 RUN curl -OL https://github.com/shinhwagk/oracle_exporter/releases/download/v2.6.2/instantclient-basic-linux.x64-12.2.0.1.0.zip
