@@ -8,6 +8,7 @@ RUN unzip instantclient-basic-linux.x64-12.2.0.1.0.zip
 RUN mkdir -p /opt/oracle
 RUN mv instantclient_12_2 /opt/oracle/instantclient_12_2
 ENV INSTANT_CLIENT /opt/oracle/instantclient_12_2
+RUN rm instantclient-basic-linux.x64-12.2.0.1.0.zip
 
 RUN echo $INSTANT_CLIENT > /etc/ld.so.conf.d/oracle-instantclient.conf
 
