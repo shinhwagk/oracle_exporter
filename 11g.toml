@@ -67,8 +67,6 @@ metricsdesc = { sequence = "Generic counter metric of tablespaces bytes in Oracl
 metricstype = { sequence = "counter" }
 request = "SELECT sequence# sequence FROM v$log WHERE thread# = (SELECT instance_number FROM v$instance) AND status = 'CURRENT'"
 
-
-
 [[metric]]
 context = "ash"
 labels = [ "sample_id", "sid", "serial", "event", "type", "username", "sql_id", "opname", "program", "machine", "blocking" ]
@@ -88,4 +86,24 @@ SELECT sample_id,
        1 sample
   FROM v$active_session_history ash
  WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND sample_time < TRUNC(sysdate, 'MI')
+'''
+
+[[metric]]
+context = "lag"
+labels = [ "dgtype", "name" ]
+metricsdesc = { sample = "Generic counter metric of tablespaces bytes in Oracle." }
+request = '''
+SELECT 'physical' dgtype, name,
+       EXTRACT(DAY FROM itval) * 24 * 60 * 60 +
+	   EXTRACT(HOUR FROM itval) * 60 * 60 + 
+	   EXTRACT(MINUTE FROM itval) * 60 +
+       EXTRACT(SECOND FROM itval) second
+  FROM (SELECT ds.name, TO_DSINTERVAL(value) itval
+          FROM v$dataguard_stats ds, v$database d
+         WHERE d.database_role = 'PHYSICAL STANDBY'
+           AND ds.name IN ('apply lag', 'transport lag'))
+UNION ALL
+SELECT 'logical' dgtype, 'apply lag' name, (SYSDATE - lp.applied_time) * 24 * 60 * 60 second
+  FROM v$logstdby_progress lp, v$database d
+ WHERE d.database_role = 'LOGICAL STANDBY'
 '''
