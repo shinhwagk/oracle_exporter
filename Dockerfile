@@ -1,7 +1,7 @@
 FROM golang:1.10.3
 
 RUN apt update
-RUN apt install -y libaio1
+RUN apt install -y libaio1 unzip
 
 RUN curl -OL https://github.com/shinhwagk/oracle_exporter/releases/download/v2.6.2/instantclient-basic-linux.x64-12.2.0.1.0.zip
 RUN unzip instantclient-basic-linux.x64-12.2.0.1.0.zip
