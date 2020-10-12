@@ -16,3 +16,10 @@ jobs:
           docker tag shinhwagk/oracle_exporter:$version shinhwagk/oracle_exporter:latest
           docker push shinhwagk/oracle_exporter:$version
           docker push shinhwagk/oracle_exporter:latest
+      - run: |
+          version=`cat VERSION`
+          docker build -t quay.io/shinhwagk/oracle_exporter:$version .
+          docker login quay.io -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker tag quay.io/shinhwagk/oracle_exporter:$version quay.io/shinhwagk/oracle_exporter:latest
+          docker push quay.io/shinhwagk/oracle_exporter:$version
+          docker push quay.io/shinhwagk/oracle_exporter:latest
