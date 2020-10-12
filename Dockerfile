@@ -1,34 +1,12 @@
-FROM golang:1.10.3
+FROM oraclelinux:7-slim
+RUN yum install -y oracle-release-el7 && \
+    yum install -y oracle-instantclient18.3-basic && \
+    rm -rf /var/cache/yum
 
-RUN apt update
-RUN apt install -y libaio1 unzip
+RUN echo /usr/lib/oracle/18.3/client64/lib > /etc/ld.so.conf.d/oracle-instantclient.conf && \
+    ldconfig
 
-RUN curl -OL https://github.com/shinhwagk/oracle_exporter/releases/download/v2.6.2/instantclient-basic-linux.x64-12.2.0.1.0.zip
-RUN unzip instantclient-basic-linux.x64-12.2.0.1.0.zip
-RUN mkdir -p /opt/oracle
-RUN mv instantclient_12_2 /opt/oracle/instantclient_12_2
-ENV INSTANT_CLIENT /opt/oracle/instantclient_12_2
-RUN rm instantclient-basic-linux.x64-12.2.0.1.0.zip
-
-RUN echo $INSTANT_CLIENT > /etc/ld.so.conf.d/oracle-instantclient.conf
-
-ENV LD_LIBRARY_PATH $INSTANT_CLIENT:$LD_LIBRARY_PATH
-
-ENV GOBIN /go/bin
-
-RUN go get -v github.com/shinhwagk/oracle_exporter/collector
-WORKDIR /go/src/github.com/shinhwagk/oracle_exporter
-
-RUN go get -v
-
-RUN go build -o oracle_exporter
-
-FROM debian
-RUN apt update && apt install -y libaio1
-ENV INSTANT_CLIENT /opt/oracle/instantclient_12_2
-RUN echo $INSTANT_CLIENT > /etc/ld.so.conf.d/oracle-instantclient.conf
-COPY --from=0 /opt /opt
-ENV LD_LIBRARY_PATH $INSTANT_CLIENT:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/usr/lib/oracle/18.3/client64/lib:$LD_LIBRARY_PATH
 WORKDIR /app
-COPY --from=0 /go/src/github.com/shinhwagk/oracle_exporter/oracle_exporter /app/oracle_exporter
-ENTRYPOINT [ "/app/oracle_exporter" ]
+ADD https://github.com/shinhwagk/oracle_exporter/releases/download/v2.6.2/oracle_exporter-v2.6.2.linux-amd64.tar.gz .
+ENTRYPOINT [ "/app/oracle_exporter-v2.6.2.linux-amd64" ]
