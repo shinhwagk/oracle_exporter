@@ -1,4 +1,4 @@
-FROM alpline
+FROM alpine
 RUN apk update && apk add --no-cache libaio1
 
 FROM golang:1.10.3
