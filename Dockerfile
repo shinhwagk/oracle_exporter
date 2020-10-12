@@ -37,5 +37,5 @@ RUN rm instantclient-basic-linux.x64-12.2.0.1.0.zip
 RUN echo $INSTANT_CLIENT > /etc/ld.so.conf.d/oracle-instantclient.conf
 ENV LD_LIBRARY_PATH $INSTANT_CLIENT:$LD_LIBRARY_PATH
 WORKDIR /app
-COPY --from=0 /oracle_exportre
+COPY --from=0 /go/src/github.com/shinhwagk/oracle_exporter/oracle_exporter /app/oracle_exporter
 ENTRYPOINT [ "/app/oracle_exporter" ]
