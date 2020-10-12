@@ -1,5 +1,5 @@
 FROM alpine
-RUN apk update && apk add --no-cache libaio1
+RUN apk update && apk add --no-cache libaio
 
 FROM golang:1.10.3
 
