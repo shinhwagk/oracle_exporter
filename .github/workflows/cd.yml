@@ -2,8 +2,8 @@ name: cd
 
 on:
   push:
-    paths:
-      - VERSION
+    branches: 
+      - master
 jobs:
   push:
     runs-on: ubuntu-latest
