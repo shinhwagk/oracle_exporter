@@ -1,0 +1,133 @@
+---
+- context: sql
+  labels:
+    - username
+    - sql_id
+    - command
+    - child
+  metricsdesc:
+    cpu_time_total: counter
+    elapsed_time_total: counter
+    buffer_gets_total: counter
+    disk_read_total: counter
+    sort_total: counter
+    executions_total: counter
+    parse_call_total: counter
+    application_wait_total: counter
+    concurrency_wait_total: counter
+    cluster_wait_total: counter
+    user_io_wait_total: counter
+    plsql_exec_total: counter
+    java_exec_total: counter
+    rows_processed_total: counter
+    phy_read_bytes_total: counter
+    phy_read_request_total: counter
+    phy_write_bytes_total: counter
+    phy_write_request_total: counter
+  metricstype:
+    cpu_time_total: counter
+    elapsed_time_total: counter
+    buffer_gets_total: counter
+    disk_read_total: counter
+    sort_total: counter
+    executions_total: counter
+    parse_call_total: counter
+    application_wait_total: counter
+    concurrency_wait_total: counter
+    cluster_wait_total: counter
+    user_io_wait_total: counter
+    plsql_exec_total: counter
+    java_exec_total: counter
+    rows_processed_total: counter
+    phy_read_bytes_total: counter
+    phy_read_request_total: counter
+    phy_write_bytes_total: counter
+    phy_write_request_total: counter
+  request: |
+    SELECT sql_id,
+    child_number child,
+    (SELECT name FROM audit_actions WHERE s.command_type = action) command,
+    parsing_schema_name username,
+    cpu_time cpu_time_total,
+    elapsed_time elapsed_time_total,
+    buffer_gets buffer_gets_total,
+    disk_reads disk_read_total,
+    sorts sort_total,
+    executions executions_total,
+    physical_read_bytes phy_read_bytes_total,
+    physical_read_requests phy_read_request_total,
+    physical_write_bytes phy_write_bytes_total,
+    physical_write_requests phy_write_request_total,
+    parse_calls parse_call_total,
+    application_wait_time application_wait_total,
+    concurrency_wait_time concurrency_wait_total,
+    cluster_wait_time cluster_wait_total,
+    user_io_wait_time user_io_wait_total,
+    plsql_exec_time plsql_exec_total,
+    java_exec_time java_exec_total,
+    rows_processed rows_processed_total
+    FROM v$sql s
+    WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'
+- name: sysevent
+  context: sysevent
+  labels:
+    - event
+    - class
+  metricsdesc:
+    waits_total: >
+      Generic counter metric of tablespaces
+      bytes in Oracle.
+  metricstype:
+    waits_total: counter
+  request: |
+    SELECT n.wait_class class,
+    e.event,
+    e.total_waits waits_total
+    FROM v$system_event e, v$event_name n
+    WHERE n.name = e.event
+- name: sysevent
+  context: sysevent
+  labels:
+    - event
+    - class
+  metricsdesc:
+    time_model: counter
+  metricstype:
+    time_model: counter
+  request: |
+    SELECT s.sid, s.serial
+    FROM v$sess_time_model stm, v$session s
+    WHERE stm.sid = s.sid AND s.username IS NOT NULL
+- name: ash
+  context: ash
+  labels:
+    - sample_id
+    - sid
+    - serial
+    - event
+    - type
+    - username
+    - sql_id
+    - opname
+    - program
+    - machine
+    - blocking
+  metricsdesc:
+    sample: >
+      Generic counter metric of tablespaces
+      bytes in Oracle.
+  request: |
+    SELECT sample_id,
+    session_id sid,
+    session_serial
+    DECODE(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event) event,
+    session_type type,
+    (SELECT username FROM dba_users WHERE user_id = ash.user_id) username,
+    NVL(sql_id, 'null') sql_id,
+    NVL(sql_opname, 'null') opname,
+    NVL(program, 'null') program,
+    NVL(machine, 'null') machine,
+    TO_CHAR(NVL(blocking_session, 0)) blocking,
+    1 sample
+    FROM v$active_session_history ash
+    WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND sample_time < TRUNC(sysdate, 'MI')

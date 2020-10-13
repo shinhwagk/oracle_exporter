@@ -1,0 +1,51 @@
+- name: sql
+  context: sql
+  labels: ["username", "sql_id", "command", "child"]
+  metricsdesc:
+    cpu_time_total: "Generic counter metric of tablespaces bytes in Oracle."
+  metricstype:
+    cpu_time_total: "counter"
+  request: |
+    SELECT sql_id,
+    child_number child,
+    (SELECT command_name FROM v$sqlcommand WHERE s.command_type = command_type) command,
+    parsing_schema_name username,
+    cpu_time cpu_time_total,
+        elapsed_time elapsed_time_total,
+        buffer_gets buffer_gets_total,
+        disk_reads disk_read_total,
+        sorts sort_total,
+        executions executions_total,
+        physical_read_bytes phy_read_bytes_total,
+        physical_read_requests phy_read_request_total,
+        physical_write_bytes phy_write_bytes_total,
+        physical_write_requests phy_write_request_total,
+        parse_calls parse_call_total,
+        application_wait_time application_wait_total,
+        concurrency_wait_time concurrency_wait_total,
+        cluster_wait_time cluster_wait_total,
+        user_io_wait_time user_io_wait_total,
+        plsql_exec_time plsql_exec_total,
+        java_exec_time java_exec_total,
+        rows_processed rows_processed_total
+    FROM v$sql s
+    WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'
+- name: sysevent
+  context: "sysevent"
+  labels: ["event", "class"]
+  metricsdesc:
+    waits_total: "counter"
+    waited_time_total: "counter"
+    timeout_total: "counter"
+  metricstype:
+    waits_total: "counter"
+    waited_time_total: "counter"
+    timeout_total: "counter"
+  request: |
+    SELECT n.wait_class class,
+          e.event,
+          e.total_waits waits_total,
+          e.time_waited_micro waited_time_total,
+          e.total_timeouts timeout_total
+    FROM v$system_event e, v$event_name n
+    WHERE n.name = e.event
