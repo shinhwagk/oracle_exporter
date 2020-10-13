@@ -38,7 +38,7 @@ metricstype = { waits_total = "counter" }
 request = '''
 SELECT n.wait_class class,
     e.event,
-    e.total_waits waits_total,
+    e.total_waits waits_total
 FROM v$system_event e, v$event_name n
 WHERE n.name = e.event
 '''
@@ -50,16 +50,16 @@ metricsdesc = { value = "Generic counter metric of tablespaces bytes in Oracle."
 metricstype = { value = "counter" }
 request = "SELECT stat_name name, value FROM v$sys_time_model"
 
-# [[metric]]
-# context = "sysevent"
-# labels = [ "owner", "name", "type", "tablespace" ]
-# metricsdesc = { bytes = "Generic counter metric of tablespaces bytes in Oracle." }
-# request = '''
-# SELECT owner, segment_name name, segment_type type, tablespace_name tablespace, sum(bytes) bytes
-#   FROM dba_segments
-#  WHERE tablespace_name NOT IN ('SYSTEM','SYSAUX') AND tablespace_name NOT LIKE 'UNDOTBS%'
-#  GROUP BY owner, segment_name, segment_type, tablespace_name
-# '''
+[[metric]]
+context = "sysevent"
+labels = [ "owner", "name", "type", "tablespace" ]
+metricsdesc = { bytes = "Generic counter metric of tablespaces bytes in Oracle." }
+request = '''
+SELECT owner, segment_name name, segment_type type, tablespace_name tablespace, sum(bytes) bytes
+  FROM dba_segments
+ WHERE tablespace_name NOT IN ('SYSTEM','SYSAUX') AND tablespace_name NOT LIKE 'UNDOTBS%'
+ GROUP BY owner, segment_name, segment_type, tablespace_name
+'''
 
 [[metric]]
 context = "log"
@@ -107,3 +107,4 @@ SELECT 'logical' dgtype, 'apply lag' name, (SYSDATE - lp.applied_time) * 24 * 60
   FROM v$logstdby_progress lp, v$database d
  WHERE d.database_role = 'LOGICAL STANDBY'
 '''
+ignorezeroresult = true
