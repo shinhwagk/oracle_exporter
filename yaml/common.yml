@@ -159,7 +159,7 @@
                     'leaf node splits',
                     'session logical reads',
                     'sorts (disk)')
-- name: system time model
+- name: system-timemodel
   context: system
   labels:
     - name
@@ -182,3 +182,23 @@
     SELECT decode(class, 1, 'User', 2, 'Read', 4, 'Enqueue', 8, 'Cache', 16, 'OS', 32, 'Real Application Clusters', 64, 'SQL', 128, 'Debug', 33, 'Other-33', 40, 'Other-40', 72, 'Other-72', 192, 'Other-192', 'Other') class,
     name,
     value statistic FROM v$sysstat WHERE value >= 1
+- name: tablespace
+  context: tablespace
+  labels:
+    - tablespace
+  metricsdesc:
+    alloc_free_bytes: counter
+    alloc_bytes: counter
+    max_bytes: counter
+  metricstype:
+    alloc_free_bytes: counter
+    alloc_bytes: counter
+    max_bytes: counter
+  request: |
+    SELECT ddf.tablespace_name tablespace, NVL(dfs.bytes, 0) alloc_free_bytes, ddf.bytes alloc_bytes, ddf.maxbytes max_bytes
+      FROM (SELECT tablespace_name, SUM(DECODE(maxbytes, 0, bytes, maxbytes)) maxbytes, SUM(bytes) bytes
+              FROM dba_data_files
+            GROUP BY tablespace_name) ddf,
+          dba_tablespaces dt,
+          (SELECT tablespace_name, SUM(bytes) bytes FROM dba_free_space GROUP BY tablespace_name) dfs
+    WHERE ddf.tablespace_name = dt.tablespace_name AND dt.tablespace_name = dfs.tablespace_name(+)
