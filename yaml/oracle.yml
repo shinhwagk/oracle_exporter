@@ -1,0 +1,423 @@
+---
+version:
+  common:
+    - name: lag
+      context: lag
+      labels:
+        - dgtype
+        - name
+      metricsdesc:
+        sample: >
+          Generic counter metric of tablespaces
+          bytes in Oracle.
+      request: |
+        SELECT 'physical' dgtype, name,
+        EXTRACT(DAY FROM itval) * 24 * 60 * 60 +
+        EXTRACT(HOUR FROM itval) * 60 * 60 +
+        EXTRACT(MINUTE FROM itval) * 60 +
+        EXTRACT(SECOND FROM itval) second
+        FROM (SELECT ds.name, TO_DSINTERVAL(value) itval
+        FROM v$dataguard_stats ds, v$database d
+        WHERE d.database_role = 'PHYSICAL STANDBY'
+        AND ds.name IN ('apply lag', 'transport lag'))
+        UNION ALL
+        SELECT 'logical' dgtype, 'apply lag' name, (SYSDATE - lp.applied_time) * 24 * 60 * 60 second
+        FROM v$logstdby_progress lp, v$database d
+        WHERE d.database_role = 'LOGICAL STANDBY'
+      ignorezeroresult: true
+    - name: time
+      context: time
+      labels:
+        - name
+      metricsdesc:
+        time_model: counter
+      metricstype:
+        time_model: counter
+      request: >
+        SELECT stat_name name, value time_model
+        FROM v$sys_time_model
+    - name: log
+      context: log
+      metricsdesc:
+        sequence: counter
+      metricstype:
+        sequence: counter
+      request: "SELECT sequence# sequence FROM v$log WHERE thread# = (SELECT instance_number FROM v$instance) AND status = 'CURRENT'"
+    - name: segment
+      context: segment
+      labels:
+        - owner
+        - name
+        - type
+        - tablespace
+      metricsdesc:
+        bytes: >
+          Generic counter metric of tablespaces
+          bytes in Oracle.
+      request: |
+        SELECT owner, segment_name name, segment_type type, tablespace_name tablespace, sum(bytes) bytes
+        FROM dba_segments
+        WHERE tablespace_name NOT IN ('SYSTEM','SYSAUX') AND tablespace_name NOT LIKE 'UNDOTBS%'
+        GROUP BY owner, segment_name, segment_type, tablespace_name
+    - name: sessevent
+      context: sessevent
+      labels:
+        - username
+        - event
+        - class
+        - sid
+      metricsdesc:
+        waits_total: counter
+        waited_time_total: counter
+        timeout_total: counter
+      metricstype:
+        waits_total: counter
+        waited_time_total: counter
+        timeout_total: counter
+      request: |
+        SELECT ss.sid,
+        ss.username,
+        se.wait_class class,
+        se.event,
+        SUM(se.total_waits) waits_total,
+        SUM(se.time_waited_micro) waited_time_total,
+        SUM(se.total_timeouts) timeout_total
+        FROM v$session_event se, v$session ss
+        WHERE ss.sid = se.sid
+        AND se.wait_class <> 'Idle'
+        AND ss.username IS NOT NULL
+        GROUP BY ss.sid, ss.username, se.event, se.wait_class
+    - name: sessclass
+      context: sessclass
+      labels:
+        - username
+        - serial
+        - class
+        - sid
+      metricsdesc:
+        waits_total: counter
+        waited_time_total: counter
+      metricstype:
+        waits_total: counter
+        waited_time_total: counter
+      request: |
+        SELECT 
+          swc.sid,
+          swc.serial# serial,
+          swc.wait_class class,
+          swc.total_waits waits_total,
+          swc.time_waited waited_time_total,
+          s.username
+        FROM v$session_wait_class swc, v$session s
+        WHERE swc.sid = s.sid AND swc.serial# = s.serial# AND s.username IS NOT NULL AND swc.wait_class <> 'Idle'
+    - name: session
+      context: session
+      labels:
+        - class
+        - name
+        - username
+        - sid
+        - serial
+      metricsdesc:
+        statistic: counter
+      metricstype:
+        statistic: counter
+      request: |
+        SELECT s.sid,
+          s.serial# serial,
+          sn.name,
+          s.username,
+          decode(sn.class, 1, 'User', 2, 'Read', 4, 'Enqueue', 8, 'Cache', 16, 'OS', 32, 'Real Application Clusters', 64, 'SQL', 128, 'Debug', 'Other') class,
+          ss.value statistic
+        FROM v$sesstat ss, v$statname sn, v$session s
+        WHERE s.sid = ss.sid AND ss.statistic# = sn.statistic# AND s.username IS NOT NULL
+        AND sn.name IN ('parse count (total)',
+                      'parse count (hard)',
+                      'parse count (failures)',
+                      'parse count (describe)',
+                      'execute count',
+                      'user commits',
+                      'user rollbacks',
+                      'physical reads',
+                      'physical read bytes',
+                      'physical read IO requests',
+                      'physical read total bytes',
+                      'physical read total IO requests',
+                      'physical read total multi block requests',
+                      'physical reads cache',
+                      'physical reads direct',
+                      'physical reads prefetch warmup',
+                      'physical write bytes',
+                      'physical write IO requests',
+                      'physical write total bytes',
+                      'physical write total IO requests',
+                      'physical write total multi block requests',
+                      'physical writes',
+                      'physical writes direct',
+                      'physical writes from cache',
+                      'physical writes non checkpoint',
+                      'redo size',
+                      'leaf node 90-10 splits',
+                      'leaf node splits',
+                      'session logical reads',
+                      'sorts (disk)')
+    - name: system-timemodel
+      context: system
+      labels:
+        - name
+      metricsdesc:
+        time_model: counter
+      metricstype:
+        time_model: counter
+      request: |
+        SELECT stat_name name, value time_model FROM v$sys_time_model
+    - name: system statistic
+      context: system
+      labels:
+        - name
+        - class
+      metricsdesc:
+        statistic: counter
+      metricstype:
+        statistic: counter
+      request: |
+        SELECT decode(class, 1, 'User', 2, 'Read', 4, 'Enqueue', 8, 'Cache', 16, 'OS', 32, 'Real Application Clusters', 64, 'SQL', 128, 'Debug', 33, 'Other-33', 40, 'Other-40', 72, 'Other-72', 192, 'Other-192', 'Other') class,
+        name,
+        value statistic FROM v$sysstat WHERE value >= 1
+    - name: tablespace
+      context: tablespace
+      labels:
+        - tablespace
+      metricsdesc:
+        alloc_free_bytes: counter
+        alloc_bytes: counter
+        max_bytes: counter
+      metricstype:
+        alloc_free_bytes: counter
+        alloc_bytes: counter
+        max_bytes: counter
+      request: |
+        SELECT ddf.tablespace_name tablespace, NVL(dfs.bytes, 0) alloc_free_bytes, ddf.bytes alloc_bytes, ddf.maxbytes max_bytes
+          FROM (SELECT tablespace_name, SUM(DECODE(maxbytes, 0, bytes, maxbytes)) maxbytes, SUM(bytes) bytes
+                  FROM dba_data_files
+                GROUP BY tablespace_name) ddf,
+              dba_tablespaces dt,
+              (SELECT tablespace_name, SUM(bytes) bytes FROM dba_free_space GROUP BY tablespace_name) dfs
+        WHERE ddf.tablespace_name = dt.tablespace_name AND dt.tablespace_name = dfs.tablespace_name(+)
+    - name: session-timemodel
+      context: session
+      labels: ["sid", "serial", "name", "username"]
+      metricsdesc:
+        time_model: counter
+      metricstype:
+        time_model: counter
+      request: |
+        SELECT s.sid, s.serial# serial, s.username, stm.stat_name name, stm.value time_model
+        FROM v$sess_time_model stm, v$session s
+        WHERE stm.sid = s.sid AND s.username IS NOT NULL
+  v10:
+    - name: sql
+      context: sql
+      labels: ["username", "sql_id", "command", "child"]
+      metricsdesc:
+        cpu_time_total: "Generic counter metric of tablespaces bytes in Oracle."
+      metricstype:
+        cpu_time_total: "counter"
+      request: |
+        SELECT sql_id,
+        child_number child,
+        (SELECT command_name FROM v$sqlcommand WHERE s.command_type = command_type) command,
+        parsing_schema_name username,
+        cpu_time cpu_time_total,
+            elapsed_time elapsed_time_total,
+            buffer_gets buffer_gets_total,
+            disk_reads disk_read_total,
+            sorts sort_total,
+            executions executions_total,
+            physical_read_bytes phy_read_bytes_total,
+            physical_read_requests phy_read_request_total,
+            physical_write_bytes phy_write_bytes_total,
+            physical_write_requests phy_write_request_total,
+            parse_calls parse_call_total,
+            application_wait_time application_wait_total,
+            concurrency_wait_time concurrency_wait_total,
+            cluster_wait_time cluster_wait_total,
+            user_io_wait_time user_io_wait_total,
+            plsql_exec_time plsql_exec_total,
+            java_exec_time java_exec_total,
+            rows_processed rows_processed_total
+        FROM v$sql s
+        WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'
+    - name: system-event
+      context: "sysevent"
+      labels: ["event", "class"]
+      metricsdesc:
+        waits_total: "counter"
+        waited_time_total: "counter"
+        timeout_total: "counter"
+      metricstype:
+        waits_total: "counter"
+        waited_time_total: "counter"
+        timeout_total: "counter"
+      request: |
+        SELECT n.wait_class class,
+              e.event,
+              e.total_waits waits_total,
+              e.time_waited_micro waited_time_total,
+              e.total_timeouts timeout_total
+        FROM v$system_event e, v$event_name n
+        WHERE n.name = e.event
+    - name: ash
+      context: ash
+      ignorezeroresult: true
+      labels:
+        - sample_id
+        - sid
+        - serial
+        - event
+        - type
+        - username
+        - sql_id
+        - opname
+        - program
+        - machine
+        - blocking
+      metricsdesc:
+        sample: gauge
+      request: |
+        SELECT 
+          sample_id,
+          session_id sid,
+          session_serial# serial,
+          DECODE(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event) event,
+          session_type type,
+          (SELECT username FROM dba_users WHERE user_id = ash.user_id) username,
+          NVL(sql_id, 'null') sql_id,
+          (SELECT name FROM audit_actions WHERE ash.sql_opcode = action) opname,
+          NVL(program, 'null') program,
+          NVL(machine, 'null') machine,
+          TO_CHAR(NVL(blocking_session, 0)) blocking,
+          1 sample
+        FROM v$active_session_history ash
+        WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND sample_time < TRUNC(sysdate, 'MI')
+  v11:
+    - name: sql
+      context: sql
+      labels:
+        - username
+        - sql_id
+        - command
+        - child
+      metricsdesc:
+        cpu_time_total: counter
+        elapsed_time_total: counter
+        buffer_gets_total: counter
+        disk_read_total: counter
+        sort_total: counter
+        executions_total: counter
+        parse_call_total: counter
+        application_wait_total: counter
+        concurrency_wait_total: counter
+        cluster_wait_total: counter
+        user_io_wait_total: counter
+        plsql_exec_total: counter
+        java_exec_total: counter
+        rows_processed_total: counter
+        phy_read_bytes_total: counter
+        phy_read_request_total: counter
+        phy_write_bytes_total: counter
+        phy_write_request_total: counter
+      metricstype:
+        cpu_time_total: counter
+        elapsed_time_total: counter
+        buffer_gets_total: counter
+        disk_read_total: counter
+        sort_total: counter
+        executions_total: counter
+        parse_call_total: counter
+        application_wait_total: counter
+        concurrency_wait_total: counter
+        cluster_wait_total: counter
+        user_io_wait_total: counter
+        plsql_exec_total: counter
+        java_exec_total: counter
+        rows_processed_total: counter
+        phy_read_bytes_total: counter
+        phy_read_request_total: counter
+        phy_write_bytes_total: counter
+        phy_write_request_total: counter
+      request: |
+        SELECT 
+          sql_id,
+          child_number child,
+          (SELECT name FROM audit_actions WHERE s.command_type = action) command,
+          parsing_schema_name username,
+          cpu_time cpu_time_total,
+          elapsed_time elapsed_time_total,
+          buffer_gets buffer_gets_total,
+          disk_reads disk_read_total,
+          sorts sort_total,
+          executions executions_total,
+          physical_read_bytes phy_read_bytes_total,
+          physical_read_requests phy_read_request_total,
+          physical_write_bytes phy_write_bytes_total,
+          physical_write_requests phy_write_request_total,
+          parse_calls parse_call_total,
+          application_wait_time application_wait_total,
+          concurrency_wait_time concurrency_wait_total,
+          cluster_wait_time cluster_wait_total,
+          user_io_wait_time user_io_wait_total,
+          plsql_exec_time plsql_exec_total,
+          java_exec_time java_exec_total,
+          rows_processed rows_processed_total
+        FROM v$sql s
+        WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'
+    - name: system-event
+      context: session
+      labels:
+        - event
+        - class
+      metricsdesc:
+        waits_total: counter
+      metricstype:
+        waits_total: counter
+      request: |
+        SELECT n.wait_class class,
+        e.event,
+        e.total_waits waits_total
+        FROM v$system_event e, v$event_name n
+        WHERE n.name = e.event
+    - name: ash
+      context: ash
+      labels:
+        - sample_id
+        - sid
+        - serial
+        - event
+        - type
+        - username
+        - sql_id
+        - opname
+        - program
+        - machine
+        - blocking
+      metricsdesc:
+        sample: >
+          Generic counter metric of tablespaces
+          bytes in Oracle.
+      request: |
+        SELECT 
+          sample_id,
+          session_id sid,
+          session_serial# serial,
+          DECODE(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event) event,
+          session_type type,
+          (SELECT username FROM dba_users WHERE user_id = ash.user_id) username,
+          NVL(sql_id, 'null') sql_id,
+          NVL(sql_opname, 'null') opname,
+          NVL(program, 'null') program,
+          NVL(machine, 'null') machine,
+          TO_CHAR(NVL(blocking_session, 0)) blocking,
+          1 sample
+        FROM v$active_session_history ash
+        WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND sample_time < TRUNC(sysdate, 'MI')

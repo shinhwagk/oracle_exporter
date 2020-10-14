@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -28,13 +29,14 @@ import (
 
 var (
 	// Version will be set at build time.
-	Version            = "0.0.0.dev"
-	listenAddress      = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
-	metricPath         = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
-	defaultFileMetrics = kingpin.Flag("default.metrics", "File with default metrics in a TOML file. (env: DEFAULT_METRICS)").Default(getEnv("DEFAULT_METRICS", "default-metrics.toml")).String()
-	queryTimeout       = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	maxIdleConns       = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
-	maxOpenConns       = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
+	Version       = "0.0.0.dev"
+	listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
+	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
+	fileMetrics   = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
+	oracleVersion = kingpin.Flag("oracle.version", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("ORACLE_VERSION", "default-metrics.toml")).String()
+	queryTimeout  = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
+	maxIdleConns  = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
+	maxOpenConns  = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
 )
 
 // Metric name parts.
@@ -44,9 +46,20 @@ const (
 )
 
 var (
-	filters        []string
-	metricFileTime map[string]time.Time = make(map[string]time.Time)
+	filters     []string
+	metricState string
 )
+
+type MetricFile struct {
+	Version MetricFileMetricVersion
+	// version MetricFileMetricVersion
+}
+type MetricFileMetricVersion struct {
+	Common []Metric
+	V10    []Metric
+	V11    []Metric
+	V12    []Metric
+}
 
 // Metrics object description
 type Metric struct {
@@ -219,8 +232,12 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		e.up.Set(1)
 	}
 
-	if checkIfMetricsChanged() {
-		reloadMetrics()
+	metricByte, err := readMetricFile()
+	if err != nil {
+		log.Errorln("Read Metric File:", err)
+	}
+	if checkIfMetricsChanged(metricByte) {
+		reloadMetrics(metricByte)
 	}
 
 	wg := sync.WaitGroup{}
@@ -268,7 +285,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 
 			scrapeStart := time.Now()
 			if err = ScrapeMetric(e.db, ch, metric); err != nil {
-				log.Errorln("Error scraping for", metric.Context, "_", metric.MetricsDesc, ":", err)
+				log.Errorln("Error scraping for", metric.Name, "_", metric.Context, ":", err)
 				e.scrapeErrors.WithLabelValues(metric.Context).Inc()
 			} else {
 				log.Debugln("Successfully scraped metric: ", metric.Context, metric.MetricsDesc, time.Since(scrapeStart))
@@ -487,36 +504,67 @@ func hashFile(h hash.Hash, fn string) error {
 	return nil
 }
 
-func checkIfMetricsChanged() bool {
-	file := *defaultFileMetrics
-	fi, err := os.Stat(file)
-	if err != nil {
-		log.Fatalln(err)
-		return false
-	}
-	newTime := fi.ModTime()
-	oldTime, ok := metricFileTime[file]
-	metricFileTime[file] = newTime
-	if ok {
-		return newTime.After(oldTime)
-	}
-	return false
+func checkIfMetricsChanged(content []byte) bool {
+	newShasum := sha256sum(content)
+	isChange := newShasum == metricState
+	metricState = newShasum
+	return !isChange
 }
 
-func reloadMetrics() {
+func sha256sum(content []byte) string {
+	h := sha256.New()
+	h.Write(content)
+	return string(h.Sum(nil))
+}
+
+func readMetricFile() ([]byte, error) {
+	metricsPath := *fileMetrics
+	var metricsBytes []byte
+	if strings.HasPrefix(metricsPath, "http://") || strings.HasPrefix(metricsPath, "https://") {
+		resp, err := http.Get(metricsPath)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		metricsBytes = body
+	} else {
+		defualtFile, err := ioutil.ReadFile(metricsPath)
+		if err != nil {
+			return nil, err
+		}
+		metricsBytes = defualtFile
+	}
+
+	return metricsBytes, nil
+}
+
+func reloadMetrics(content []byte) {
 	// Truncate metricsToScrap
 	metricsToScrap.Metric = []Metric{}
+	metricsFile := MetricFile{}
 
 	// Load default metrics
-	defualtFile, err := ioutil.ReadFile(*defaultFileMetrics)
-	if err != nil {
-		log.Errorln("defaultFileMetrics.Get err   #%v ", err)
-	}
-	if err := yaml.Unmarshal(defualtFile, &metricsToScrap.Metric); err != nil {
+	if err := yaml.Unmarshal(content, &metricsFile); err != nil {
 		log.Errorln(err)
-		panic(errors.New("Error while loading " + *defaultFileMetrics))
+		panic(errors.New("Error while loading " + *fileMetrics))
 	} else {
-		log.Infoln("Successfully loaded default metrics from: " + *defaultFileMetrics)
+		log.Infoln("Successfully loaded default metrics from: " + *fileMetrics)
+	}
+	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.Common...)
+
+	switch *oracleVersion {
+	case "10":
+		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V10...)
+	case "11":
+		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V11...)
+	case "12":
+		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V12...)
+	default:
+		fmt.Printf("unkown version %s.\n", *oracleVersion)
 	}
 
 }
@@ -541,9 +589,15 @@ func main() {
 
 	// Load default and custom metrics
 	hashMap = make(map[int][]byte)
-	reloadMetrics()
 
-	log.Infof("Available Contexts:")
+	metricByte, err := readMetricFile()
+	metricState = sha256sum(metricByte)
+	if err != nil {
+		log.Errorln("Read Metric File:", err)
+	}
+	reloadMetrics(metricByte)
+
+	log.Infof("Available Collectors for Oracle Version:%s", *oracleVersion)
 	for _, n := range metricsToScrap.Metric {
 		log.Infof(" - %s", n.Name)
 	}
