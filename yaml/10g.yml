@@ -30,7 +30,7 @@
         rows_processed rows_processed_total
     FROM v$sql s
     WHERE last_active_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND is_obsolete ='N'
-- name: sysevent
+- name: system-event
   context: "sysevent"
   labels: ["event", "class"]
   metricsdesc:
@@ -49,3 +49,35 @@
           e.total_timeouts timeout_total
     FROM v$system_event e, v$event_name n
     WHERE n.name = e.event
+- name: ash
+  context: ash
+  labels:
+    - sample_id
+    - sid
+    - serial
+    - event
+    - type
+    - username
+    - sql_id
+    - opname
+    - program
+    - machine
+    - blocking
+  metricsdesc:
+    sample: guard
+  request: |
+    SELECT 
+      sample_id,
+      session_id sid,
+      session_serial# serial,
+      DECODE(session_state, 'ON CPU', 'Wait for CPU', 'WAITING', event) event,
+      session_type type,
+      (SELECT username FROM dba_users WHERE user_id = ash.user_id) username,
+      NVL(sql_id, 'null') sql_id,
+      (SELECT name FROM audit_actions WHERE ash.sql_opcode = action) opname,
+      NVL(program, 'null') program,
+      NVL(machine, 'null') machine,
+      TO_CHAR(NVL(blocking_session, 0)) blocking,
+      1 sample
+    FROM v$active_session_history ash
+    WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60 AND sample_time < TRUNC(sysdate, 'MI')

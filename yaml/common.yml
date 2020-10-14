@@ -202,3 +202,14 @@
           dba_tablespaces dt,
           (SELECT tablespace_name, SUM(bytes) bytes FROM dba_free_space GROUP BY tablespace_name) dfs
     WHERE ddf.tablespace_name = dt.tablespace_name AND dt.tablespace_name = dfs.tablespace_name(+)
+- name: session-timemodel
+  context: session
+  labels: ["sid", "serial", "name", "username"]
+  metricsdesc:
+    time_model: counter
+  metricstype:
+    time_model: counter
+  request: |
+    SELECT s.sid, s.serial# serial, s.username, stm.stat_name name, stm.value time_model
+    FROM v$sess_time_model stm, v$session s
+    WHERE stm.sid = s.sid AND s.username IS NOT NULL
