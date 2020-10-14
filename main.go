@@ -564,7 +564,7 @@ func reloadMetrics(content []byte) {
 	case "12":
 		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V12...)
 	default:
-		fmt.Printf("unkown version %s.\n", *oracleVersion)
+		panic(errors.New("unkown version " + *oracleVersion))
 	}
 
 }

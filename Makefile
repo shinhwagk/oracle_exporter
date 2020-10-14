@@ -8,8 +8,8 @@ RPM_VERSION    ?= $(ORACLE_VERSION).0.0.0-3
 ORA_RPM         = oracle-instantclient$(ORACLE_VERSION)-devel-$(RPM_VERSION).$(ARCH).rpm oracle-instantclient$(ORACLE_VERSION)-basic-$(RPM_VERSION).$(ARCH).rpm
 LD_LIBRARY_PATH = /usr/lib/oracle/$(ORACLE_VERSION)/client64/lib
 BUILD_ARGS      = --build-arg VERSION=$(VERSION) --build-arg ORACLE_VERSION=$(ORACLE_VERSION)
-DIST_DIR        = oracledb_exporter.$(VERSION)-ora$(ORACLE_VERSION).linux-${GOARCH}
-ARCHIVE         = oracledb_exporter.$(VERSION)-ora$(ORACLE_VERSION).linux-${GOARCH}.tar.gz
+DIST_DIR        = oracle_exporter.$(VERSION)-ora$(ORACLE_VERSION).linux-${GOARCH}
+ARCHIVE         = oracle_exporter.$(VERSION)-ora$(ORACLE_VERSION).linux-${GOARCH}.tar.gz
 
 export LD_LIBRARY_PATH ORACLE_VERSION
 
@@ -32,8 +32,7 @@ oci.pc:
 linux: oci.pc
 	@echo build linux
 	mkdir -p ./dist/$(DIST_DIR)
-	PKG_CONFIG_PATH=${PWD} GOOS=linux go build $(GOFLAGS) -o ./dist/$(DIST_DIR)/oracledb_exporter
-	cp default-metrics.toml ./dist/$(DIST_DIR)
+	PKG_CONFIG_PATH=${PWD} GOOS=linux go build $(GOFLAGS) -o ./dist/$(DIST_DIR)/oracle_exporter
 	(cd dist ; tar cfz $(ARCHIVE) $(DIST_DIR))
 
 darwin: oci.pc
