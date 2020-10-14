@@ -33,7 +33,6 @@ var (
 	listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
 	fileMetrics   = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
-	oracleVersion = kingpin.Flag("oracle.version", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("ORACLE_VERSION", "default-metrics.toml")).String()
 	queryTimeout  = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
 	maxIdleConns  = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
 	maxOpenConns  = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
@@ -45,16 +44,21 @@ const (
 	exporter  = "exporter"
 )
 
+// global vars
 var (
 	filters     []string
 	metricState string
+	dbVersion   string
+	dsn         = os.Getenv("DATA_SOURCE_NAME")
+	dbCon       *sql.DB
+	// Metrics to scrap. Use external file (default-metrics.toml and custom if provided)
+	metricsToScrap Metrics
 )
 
 type MetricFile struct {
-	Version MetricFileMetricVersion
-	// version MetricFileMetricVersion
+	Version MetricFileMetricsVersion
 }
-type MetricFileMetricVersion struct {
+type MetricFileMetricsVersion struct {
 	Common []Metric
 	V10    []Metric
 	V11    []Metric
@@ -79,20 +83,12 @@ type Metrics struct {
 	Metric []Metric
 }
 
-// Metrics to scrap. Use external file (default-metrics.toml and custom if provided)
-var (
-	metricsToScrap Metrics
-	hashMap        map[int][]byte
-)
-
 // Exporter collects Oracle DB metrics. It implements prometheus.Collector.
 type Exporter struct {
-	dsn             string
 	duration, error prometheus.Gauge
 	totalScrapes    prometheus.Counter
 	scrapeErrors    *prometheus.CounterVec
 	up              prometheus.Gauge
-	db              *sql.DB
 }
 
 // getEnv returns the value of an environment variable, or returns the provided fallback value
@@ -103,16 +99,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// func atoi(stringValue string) int {
-// 	intValue, err := strconv.Atoi(stringValue)
-// 	if err != nil {
-// 		log.Fatal("error while converting to int:", err)
-// 		panic(err)
-// 	}
-// 	return intValue
-// }
-
-func connect(dsn string) *sql.DB {
+func createConnect() {
 	log.Debugln("Launching connection: ", dsn)
 	db, err := sql.Open("godror", dsn)
 	if err != nil {
@@ -124,14 +111,21 @@ func connect(dsn string) *sql.DB {
 	log.Debugln("set max open connections to ", *maxOpenConns)
 	db.SetMaxOpenConns(*maxOpenConns)
 	log.Debugln("Successfully connected to: ", dsn)
-	return db
+	dbCon = db
+}
+
+func getOracleVersion() string {
+	var version string
+	rows := dbCon.QueryRow("SELECT SUBSTR(version,0,2) FROM product_component_version")
+	if err := rows.Scan(&version); err != nil {
+		log.Errorln("quay database version faile:%s", err)
+	}
+	return version
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
-func NewExporter(dsn string) *Exporter {
-	db := connect(dsn)
+func NewExporter() *Exporter {
 	return &Exporter{
-		dsn: dsn,
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: exporter,
@@ -161,7 +155,6 @@ func NewExporter(dsn string) *Exporter {
 			Name:      "up",
 			Help:      "Whether the Oracle database server is up.",
 		}),
-		db: db,
 	}
 }
 
@@ -216,15 +209,15 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		}
 	}(time.Now())
 
-	if err = e.db.Ping(); err != nil {
+	if err = dbCon.Ping(); err != nil {
 		if strings.Contains(err.Error(), "sql: database is closed") {
 			log.Infoln("Reconnecting to DB")
-			e.db = connect(e.dsn)
+			createConnect()
 		}
 	}
-	if err = e.db.Ping(); err != nil {
+	if err = dbCon.Ping(); err != nil {
 		log.Errorln("Error pinging oracle:", err)
-		//e.db.Close()
+		//dbCon.Close()
 		e.up.Set(0)
 		return
 	} else {
@@ -284,7 +277,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			}
 
 			scrapeStart := time.Now()
-			if err = ScrapeMetric(e.db, ch, metric); err != nil {
+			if err = ScrapeMetric(dbCon, ch, metric); err != nil {
 				log.Errorln("Error scraping for", metric.Name, "_", metric.Context, ":", err)
 				e.scrapeErrors.WithLabelValues(metric.Context).Inc()
 			} else {
@@ -526,19 +519,18 @@ func readMetricFile() ([]byte, error) {
 			return nil, err
 		}
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
+		if body, err := ioutil.ReadAll(resp.Body); err != nil {
 			return nil, err
+		} else {
+			metricsBytes = body
 		}
-		metricsBytes = body
 	} else {
-		defualtFile, err := ioutil.ReadFile(metricsPath)
+		var err error
+		metricsBytes, err = ioutil.ReadFile(metricsPath)
 		if err != nil {
 			return nil, err
 		}
-		metricsBytes = defualtFile
 	}
-
 	return metricsBytes, nil
 }
 
@@ -554,9 +546,10 @@ func reloadMetrics(content []byte) {
 	} else {
 		log.Infoln("Successfully loaded default metrics from: " + *fileMetrics)
 	}
+	// append common metrics
 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.Common...)
 
-	switch *oracleVersion {
+	switch dbVersion {
 	case "10":
 		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V10...)
 	case "11":
@@ -564,9 +557,8 @@ func reloadMetrics(content []byte) {
 	case "12":
 		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V12...)
 	default:
-		panic(errors.New("unkown version " + *oracleVersion))
+		panic(errors.New("unkown version " + dbVersion))
 	}
-
 }
 
 func Exist(slice []string, val string) bool {
@@ -585,24 +577,23 @@ func main() {
 	kingpin.Parse()
 
 	log.Infoln("Starting oracledb_exporter " + Version)
-	dsn := os.Getenv("DATA_SOURCE_NAME")
-
-	// Load default and custom metrics
-	hashMap = make(map[int][]byte)
 
 	metricByte, err := readMetricFile()
 	metricState = sha256sum(metricByte)
 	if err != nil {
 		log.Errorln("Read Metric File:", err)
 	}
+
+	createConnect()
+	dbVersion = getOracleVersion()
 	reloadMetrics(metricByte)
 
-	log.Infof("Available Collectors for Oracle Version:%s", *oracleVersion)
+	log.Infof("Available Collectors for Oracle Version:%s", dbVersion)
 	for _, n := range metricsToScrap.Metric {
 		log.Infof(" - %s", n.Name)
 	}
 
-	exporter := NewExporter(dsn)
+	exporter := NewExporter()
 	prometheus.MustRegister(exporter)
 
 	http.HandleFunc(*metricPath, func(w http.ResponseWriter, r *http.Request) {
