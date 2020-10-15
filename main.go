@@ -44,13 +44,12 @@ const (
 	exporter  = "exporter"
 )
 
-// global vars
+// global variables
 var (
-	filters     []string
-	metricState string
-	dbVersion   string
-	dsn         = os.Getenv("DATA_SOURCE_NAME")
-	dbCon       *sql.DB
+	metricContentState string
+	dbVersion          string
+	dsn                = os.Getenv("DATA_SOURCE_NAME")
+	dbCon              *sql.DB
 	// Metrics to scrap. Use external file (default-metrics.toml and custom if provided)
 	metricsToScrap Metrics
 )
@@ -63,6 +62,8 @@ type MetricFileMetricsVersion struct {
 	V10    []Metric
 	V11    []Metric
 	V12    []Metric
+	V18    []Metric
+	V19    []Metric
 }
 
 // Metrics object description
@@ -85,6 +86,7 @@ type Metrics struct {
 
 // Exporter collects Oracle DB metrics. It implements prometheus.Collector.
 type Exporter struct {
+	filter          []string
 	duration, error prometheus.Gauge
 	totalScrapes    prometheus.Counter
 	scrapeErrors    *prometheus.CounterVec
@@ -99,7 +101,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func createConnect() {
+func createDatabaseConnect() {
 	log.Debugln("Launching connection: ", dsn)
 	db, err := sql.Open("godror", dsn)
 	if err != nil {
@@ -124,8 +126,9 @@ func getOracleVersion() string {
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
-func NewExporter() *Exporter {
+func NewExporter(filters []string) *Exporter {
 	return &Exporter{
+		filter: filters,
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: exporter,
@@ -212,7 +215,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	if err = dbCon.Ping(); err != nil {
 		if strings.Contains(err.Error(), "sql: database is closed") {
 			log.Infoln("Reconnecting to DB")
-			createConnect()
+			createDatabaseConnect()
 		}
 	}
 	if err = dbCon.Ping(); err != nil {
@@ -225,18 +228,18 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		e.up.Set(1)
 	}
 
-	metricByte, err := readMetricFile()
+	metricByte, err := readMetricFileContent()
 	if err != nil {
 		log.Errorln("Read Metric File:", err)
 	}
 	if checkIfMetricsChanged(metricByte) {
-		reloadMetrics(metricByte)
+		resolveMetrics(metricByte)
 	}
 
 	wg := sync.WaitGroup{}
 
 	for _, metric := range metricsToScrap.Metric {
-		if len(filters) > 0 && Exist(filters, metric.Name) == false {
+		if len(e.filter) > 0 && filterMetric(e.filter, metric.Name) == false {
 			continue
 		}
 		wg.Add(1)
@@ -413,9 +416,9 @@ func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string
 	if err != nil {
 		return err
 	}
-	if !ignoreZeroResult && metricsCount == 0 {
-		return errors.New("No metrics found while parsing")
-	}
+	// if !ignoreZeroResult && metricsCount == 0 {
+	// 	return errors.New("No metrics found while parsing")
+	// }
 	return err
 }
 
@@ -499,8 +502,8 @@ func hashFile(h hash.Hash, fn string) error {
 
 func checkIfMetricsChanged(content []byte) bool {
 	newShasum := sha256sum(content)
-	isChange := newShasum == metricState
-	metricState = newShasum
+	isChange := newShasum == metricContentState
+	metricContentState = newShasum
 	return !isChange
 }
 
@@ -510,7 +513,7 @@ func sha256sum(content []byte) string {
 	return string(h.Sum(nil))
 }
 
-func readMetricFile() ([]byte, error) {
+func readMetricFileContent() ([]byte, error) {
 	metricsPath := *fileMetrics
 	var metricsBytes []byte
 	if strings.HasPrefix(metricsPath, "http://") || strings.HasPrefix(metricsPath, "https://") {
@@ -534,7 +537,7 @@ func readMetricFile() ([]byte, error) {
 	return metricsBytes, nil
 }
 
-func reloadMetrics(content []byte) {
+func resolveMetrics(content []byte) {
 	// Truncate metricsToScrap
 	metricsToScrap.Metric = []Metric{}
 	metricsFile := MetricFile{}
@@ -542,9 +545,9 @@ func reloadMetrics(content []byte) {
 	// Load default metrics
 	if err := yaml.Unmarshal(content, &metricsFile); err != nil {
 		log.Errorln(err)
-		panic(errors.New("Error while loading " + *fileMetrics))
+		panic(errors.New("Error loading metric file content " + *fileMetrics))
 	} else {
-		log.Infoln("Successfully loaded default metrics from: " + *fileMetrics)
+		log.Infoln("Successfully loaded metrics yaml from: " + *fileMetrics)
 	}
 	// append common metrics
 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.Common...)
@@ -556,12 +559,16 @@ func reloadMetrics(content []byte) {
 		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V11...)
 	case "12":
 		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V12...)
+	case "18":
+		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V18...)
+	case "19":
+		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V19...)
 	default:
 		panic(errors.New("unkown version " + dbVersion))
 	}
 }
 
-func Exist(slice []string, val string) bool {
+func filterMetric(slice []string, val string) bool {
 	for _, item := range slice {
 		if item == val {
 			return true
@@ -572,29 +579,25 @@ func Exist(slice []string, val string) bool {
 
 func main() {
 	log.AddFlags(kingpin.CommandLine)
-	kingpin.Version("oracledb_exporter " + Version)
+	kingpin.Version("oracle_exporter " + Version)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
 	log.Infoln("Starting oracledb_exporter " + Version)
 
-	metricByte, err := readMetricFile()
-	metricState = sha256sum(metricByte)
-	if err != nil {
-		log.Errorln("Read Metric File:", err)
+	createDatabaseConnect()
+	dbVersion = getOracleVersion()
+	if metricContentByte, err := readMetricFileContent(); err != nil {
+		panic(errors.New("Read Metric File:" + err.Error()))
+	} else {
+		metricContentState = sha256sum(metricContentByte)
+		resolveMetrics(metricContentByte)
 	}
 
-	createConnect()
-	dbVersion = getOracleVersion()
-	reloadMetrics(metricByte)
-
-	log.Infof("Available Collectors for Oracle Version:%s", dbVersion)
+	log.Infof("Available Collectors for Oracle Version %s", dbVersion)
 	for _, n := range metricsToScrap.Metric {
 		log.Infof(" - %s", n.Name)
 	}
-
-	exporter := NewExporter()
-	prometheus.MustRegister(exporter)
 
 	http.HandleFunc(*metricPath, func(w http.ResponseWriter, r *http.Request) {
 		// See more info on https://github.com/prometheus/client_golang/blob/master/prometheus/promhttp/http.go#L269
@@ -602,8 +605,14 @@ func main() {
 			ErrorLog:      log.NewErrorLogger(),
 			ErrorHandling: promhttp.ContinueOnError,
 		}
-		filters = r.URL.Query()["collect[]"]
-		log.Debugln("collect query:", filters)
+		filters := r.URL.Query()["collect[]"]
+		log.Infoln("collect query:", filters)
+		registry := prometheus.NewRegistry()
+		exporter := NewExporter(filters)
+		err := registry.Register(exporter)
+		if err != nil {
+
+		}
 		gatherers := prometheus.Gatherers{prometheus.DefaultGatherer}
 		promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, promhttp.HandlerFor(gatherers, opts)).ServeHTTP(w, r)
 	})

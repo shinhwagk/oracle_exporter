@@ -9,7 +9,7 @@
 		"editor.formatOnSave": true
 	},
 	"extensions": [
-		"ms-vscode.go",
+		"golang.go",
 		"eamodio.gitlens"
 	]
 }
