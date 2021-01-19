@@ -46,25 +46,26 @@ const (
 
 // global variables
 var (
-	metricContentState string
-	dbVersion          string
-	dsn                = os.Getenv("DATA_SOURCE_NAME")
-	dbCon              *sql.DB
+	metricFileShasum string
+	// dbVersion        string
+	dsn   = os.Getenv("DATA_SOURCE_NAME")
+	dbCon *sql.DB
 	// Metrics to scrap. Use external file (default-metrics.toml and custom if provided)
 	metricsToScrap Metrics
 )
 
 type MetricFile struct {
-	Version MetricFileMetricsVersion
+	metrics []Metric
 }
-type MetricFileMetricsVersion struct {
-	Common []Metric
-	V10    []Metric
-	V11    []Metric
-	V12    []Metric
-	V18    []Metric
-	V19    []Metric
-}
+
+// type MetricFileMetricsVersion struct {
+// 	V00 []Metric
+// 	V10 []Metric
+// 	V11 []Metric
+// 	V12 []Metric
+// 	V18 []Metric
+// 	V19 []Metric
+// }
 
 // Metrics object description
 type Metric struct {
@@ -118,7 +119,7 @@ func createDatabaseConnect() {
 
 func getOracleVersion() string {
 	var version string
-	rows := dbCon.QueryRow("SELECT SUBSTR(version,0,2) FROM product_component_version")
+	rows := dbCon.QueryRow("SELECT SUBSTR(version,0,2) FROM product_component_version WHERE UPPER(product) LIKE '%DATABASE%'")
 	if err := rows.Scan(&version); err != nil {
 		log.Errorln("quay database version faile:%s", err)
 	}
@@ -161,19 +162,7 @@ func NewExporter(filters []string) *Exporter {
 	}
 }
 
-// Describe describes all the metrics exported by the Oracle DB exporter.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	// We cannot know in advance what metrics the exporter will generate
-	// So we use the poor man's describe method: Run a collect
-	// and send the descriptors of all the collected metrics. The problem
-	// here is that we need to connect to the Oracle DB. If it is currently
-	// unavailable, the descriptors will be incomplete. Since this is a
-	// stand-alone exporter and not used as a library within other code
-	// implementing additional metrics, the worst that can happen is that we
-	// don't detect inconsistent metrics created by this exporter
-	// itself. Also, a change in the monitored Oracle instance may change the
-	// exported metrics during the runtime of the exporter.
-
 	metricCh := make(chan prometheus.Metric)
 	doneCh := make(chan struct{})
 
@@ -183,11 +172,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 		}
 		close(doneCh)
 	}()
-
 	e.Collect(metricCh)
 	close(metricCh)
 	<-doneCh
-
 }
 
 // Collect implements prometheus.Collector.
@@ -228,18 +215,12 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		e.up.Set(1)
 	}
 
-	metricByte, err := readMetricFileContent()
-	if err != nil {
-		log.Errorln("Read Metric File:", err)
-	}
-	if checkIfMetricsChanged(metricByte) {
-		resolveMetrics(metricByte)
-	}
+	resolveMetricFile()
 
 	wg := sync.WaitGroup{}
 
 	for _, metric := range metricsToScrap.Metric {
-		if len(e.filter) > 0 && filterMetric(e.filter, metric.Name) == false {
+		if filterMetric(e.filter, metric.Name) == false {
 			continue
 		}
 		wg.Add(1)
@@ -333,8 +314,7 @@ func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string
 			value, err := strconv.ParseFloat(strings.TrimSpace(row[metric]), 64)
 			// If not a float, skip current metric
 			if err != nil {
-				log.Errorln("Unable to convert current value to float (metric=" + metric +
-					",metricHelp=" + metricHelp + ",value=<" + row[metric] + ">)")
+				log.Errorln("Unable to convert current value to float (metric=" + metric + ",metricHelp=" + metricHelp + ",value=<" + row[metric] + ">)")
 				continue
 			}
 			log.Debugln("Query result looks like: ", value)
@@ -348,22 +328,19 @@ func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string
 				if metricsType[strings.ToLower(metric)] == "histogram" {
 					count, err := strconv.ParseUint(strings.TrimSpace(row["count"]), 10, 64)
 					if err != nil {
-						log.Errorln("Unable to convert count value to int (metric=" + metric +
-							",metricHelp=" + metricHelp + ",value=<" + row["count"] + ">)")
+						log.Errorln("Unable to convert count value to int (metric=" + metric + ",metricHelp=" + metricHelp + ",value=<" + row["count"] + ">)")
 						continue
 					}
 					buckets := make(map[float64]uint64)
 					for field, le := range metricsBuckets[metric] {
 						lelimit, err := strconv.ParseFloat(strings.TrimSpace(le), 64)
 						if err != nil {
-							log.Errorln("Unable to convert bucket limit value to float (metric=" + metric +
-								",metricHelp=" + metricHelp + ",bucketlimit=<" + le + ">)")
+							log.Errorln("Unable to convert bucket limit value to float (metric=" + metric + ",metricHelp=" + metricHelp + ",bucketlimit=<" + le + ">)")
 							continue
 						}
 						counter, err := strconv.ParseUint(strings.TrimSpace(row[field]), 10, 64)
 						if err != nil {
-							log.Errorln("Unable to convert ", field, " value to int (metric="+metric+
-								",metricHelp="+metricHelp+",value=<"+row[field]+">)")
+							log.Errorln("Unable to convert ", field, " value to int (metric="+metric+",metricHelp="+metricHelp+",value=<"+row[field]+">)")
 							continue
 						}
 						buckets[lelimit] = counter
@@ -382,22 +359,19 @@ func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string
 				if metricsType[strings.ToLower(metric)] == "histogram" {
 					count, err := strconv.ParseUint(strings.TrimSpace(row["count"]), 10, 64)
 					if err != nil {
-						log.Errorln("Unable to convert count value to int (metric=" + metric +
-							",metricHelp=" + metricHelp + ",value=<" + row["count"] + ">)")
+						log.Errorln("Unable to convert count value to int (metric=" + metric + ",metricHelp=" + metricHelp + ",value=<" + row["count"] + ">)")
 						continue
 					}
 					buckets := make(map[float64]uint64)
 					for field, le := range metricsBuckets[metric] {
 						lelimit, err := strconv.ParseFloat(strings.TrimSpace(le), 64)
 						if err != nil {
-							log.Errorln("Unable to convert bucket limit value to float (metric=" + metric +
-								",metricHelp=" + metricHelp + ",bucketlimit=<" + le + ">)")
+							log.Errorln("Unable to convert bucket limit value to float (metric=" + metric + ",metricHelp=" + metricHelp + ",bucketlimit=<" + le + ">)")
 							continue
 						}
 						counter, err := strconv.ParseUint(strings.TrimSpace(row[field]), 10, 64)
 						if err != nil {
-							log.Errorln("Unable to convert ", field, " value to int (metric="+metric+
-								",metricHelp="+metricHelp+",value=<"+row[field]+">)")
+							log.Errorln("Unable to convert ", field, " value to int (metric="+metric+",metricHelp="+metricHelp+",value=<"+row[field]+">)")
 							continue
 						}
 						buckets[lelimit] = counter
@@ -451,7 +425,7 @@ func GeneratePrometheusMetrics(db *sql.DB, parse func(row map[string]string) err
 		// and a second slice to contain pointers to each item in the columns slice.
 		columns := make([]interface{}, len(cols))
 		columnPointers := make([]interface{}, len(cols))
-		for i, _ := range columns {
+		for i := range columns {
 			columnPointers[i] = &columns[i]
 		}
 
@@ -472,9 +446,7 @@ func GeneratePrometheusMetrics(db *sql.DB, parse func(row map[string]string) err
 			return err
 		}
 	}
-
 	return nil
-
 }
 
 // Oracle gives us some ugly names back. This function cleans things up for Prometheus.
@@ -500,11 +472,10 @@ func hashFile(h hash.Hash, fn string) error {
 	return nil
 }
 
-func checkIfMetricsChanged(content []byte) bool {
+func checkIfMetricsChanged(content []byte) (bool, string) {
 	newShasum := sha256sum(content)
-	isChange := newShasum == metricContentState
-	metricContentState = newShasum
-	return !isChange
+	isChange := newShasum == metricFileShasum
+	return !isChange, newShasum
 }
 
 func sha256sum(content []byte) string {
@@ -513,11 +484,13 @@ func sha256sum(content []byte) string {
 	return string(h.Sum(nil))
 }
 
-func readMetricFileContent() ([]byte, error) {
+func readMetricFile() ([]byte, error) {
 	metricsPath := *fileMetrics
 	var metricsBytes []byte
+	var err error
 	if strings.HasPrefix(metricsPath, "http://") || strings.HasPrefix(metricsPath, "https://") {
-		resp, err := http.Get(metricsPath)
+		var resp *http.Response
+		resp, err = http.Get(metricsPath)
 		if err != nil {
 			return nil, err
 		}
@@ -550,22 +523,22 @@ func resolveMetrics(content []byte) {
 		log.Infoln("Successfully loaded metrics yaml from: " + *fileMetrics)
 	}
 	// append common metrics
-	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.Common...)
+	// metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V00...)
 
-	switch dbVersion {
-	case "10":
-		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V10...)
-	case "11":
-		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V11...)
-	case "12":
-		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V12...)
-	case "18":
-		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V18...)
-	case "19":
-		metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V19...)
-	default:
-		panic(errors.New("unkown version " + dbVersion))
-	}
+	// switch dbVersion {
+	// case "10":
+	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V10...)
+	// case "11":
+	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V11...)
+	// case "12":
+	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V12...)
+	// case "18":
+	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V18...)
+	// case "19":
+	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V19...)
+	// default:
+	// 	panic(errors.New("unkown version " + dbVersion))
+	// }
 }
 
 func filterMetric(slice []string, val string) bool {
@@ -577,6 +550,21 @@ func filterMetric(slice []string, val string) bool {
 	return false
 }
 
+func resolveMetricFile() {
+	if metricContentByte, err := readMetricFile(); err != nil {
+		panic(errors.New("Read Metric File:" + err.Error()))
+	} else {
+		if isChange, shasum := checkIfMetricsChanged(metricContentByte); isChange {
+			metricFileShasum = shasum
+			resolveMetrics(metricContentByte)
+		}
+	}
+	log.Infof("Available Collectors for Oracle Version %s", dbVersion)
+	for _, n := range metricsToScrap.Metric {
+		log.Infof(" - %s", n.Name)
+	}
+}
+
 func main() {
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Version("oracle_exporter " + Version)
@@ -585,19 +573,9 @@ func main() {
 
 	log.Infoln("Starting oracledb_exporter " + Version)
 
+	resolveMetricFile()
 	createDatabaseConnect()
-	dbVersion = getOracleVersion()
-	if metricContentByte, err := readMetricFileContent(); err != nil {
-		panic(errors.New("Read Metric File:" + err.Error()))
-	} else {
-		metricContentState = sha256sum(metricContentByte)
-		resolveMetrics(metricContentByte)
-	}
-
-	log.Infof("Available Collectors for Oracle Version %s", dbVersion)
-	for _, n := range metricsToScrap.Metric {
-		log.Infof(" - %s", n.Name)
-	}
+	// dbVersion = getOracleVersion()
 
 	http.HandleFunc(*metricPath, func(w http.ResponseWriter, r *http.Request) {
 		// See more info on https://github.com/prometheus/client_golang/blob/master/prometheus/promhttp/http.go#L269
