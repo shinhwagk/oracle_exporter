@@ -48,11 +48,8 @@ const (
 // global variables
 var (
 	metricFileShasum string
-	// dbVersion        string
-	// *dataSource   = *dataSource //os.Getenv("DATA_SOURCE_NAME")
-	dbCon *sql.DB
-	// Metrics to scrap. Use external file (default-metrics.toml and custom if provided)
-	metricsToScrap Metrics
+	dbCon            *sql.DB
+	metricsToScrap   Metrics
 )
 
 // type MetricFile struct {
@@ -177,7 +174,6 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- e.error
 	e.scrapeErrors.Collect(ch)
 	ch <- e.up
-	fmt.Println("aaaaaaaaaaaaa")
 }
 
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
@@ -213,9 +209,9 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	wg := sync.WaitGroup{}
 
 	for _, metric := range metricsToScrap.Metric {
-		// if filterMetric(e.filter, metric.Name) == false {
-		// 	continue
-		// }
+		if filterMetric(e.filter, metric.Name) == false {
+			continue
+		}
 		wg.Add(1)
 		metric := metric //https://golang.org/doc/faq#closures_and_goroutines
 
@@ -533,10 +529,29 @@ func resolveMetricFile() {
 		if isChange, shasum := checkIfMetricsChanged(metricContentByte); isChange {
 			metricFileShasum = shasum
 			resolveMetrics(metricContentByte)
+			for _, n := range metricsToScrap.Metric {
+				log.Infof(" - %s", n.Name)
+			}
 		}
 	}
-	for _, n := range metricsToScrap.Metric {
-		log.Infof(" - %s", n.Name)
+}
+
+func newHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filters := r.URL.Query()["collect[]"]
+		log.Debugln("collect query:", filters)
+		registry := prometheus.NewRegistry()
+		exporter := NewExporter(filters)
+		err := registry.Register(exporter)
+		if err != nil {
+			log.Errorln("Prometheus register error %s", err)
+		}
+		gatherers := prometheus.Gatherers{
+			prometheus.DefaultGatherer,
+			registry,
+		}
+		h := promhttp.HandlerFor(gatherers, promhttp.HandlerOpts{})
+		h.ServeHTTP(w, r)
 	}
 }
 
@@ -552,24 +567,8 @@ func main() {
 	createDatabaseConnect()
 	// dbVersion = getOracleVersion()
 
-	http.HandleFunc(*metricPath, func(w http.ResponseWriter, r *http.Request) {
-		// See more info on https://github.com/prometheus/client_golang/blob/master/prometheus/promhttp/http.go#L269
-		opts := promhttp.HandlerOpts{
-			ErrorLog:      log.NewErrorLogger(),
-			ErrorHandling: promhttp.ContinueOnError,
-		}
-		filters := r.URL.Query()["collect[]"]
-		log.Infoln("collect query:", filters)
-		registry := prometheus.NewRegistry()
-		exporter := NewExporter(filters)
-		err := registry.Register(exporter)
-		if err != nil {
-
-		}
-		gatherers := prometheus.Gatherers{prometheus.DefaultGatherer}
-		h := promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, promhttp.HandlerFor(gatherers, opts))
-		h.ServeHTTP(w, r)
-	})
+	handlerFunc := newHandler()
+	http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<html><head><title>Oracle DB Exporter " + Version + "</title></head><body><h1>Oracle DB Exporter " + Version + "</h1><p><a href='" + *metricPath + "'>Metrics</a></p></body></html>"))
 	})
