@@ -31,6 +31,7 @@ var (
 	// Version will be set at build time.
 	Version       = "0.0.0.dev"
 	listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
+	dataSource    = kingpin.Flag("database.datasource", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").String()
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
 	fileMetrics   = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
 	queryTimeout  = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
@@ -48,23 +49,14 @@ const (
 var (
 	metricFileShasum string
 	// dbVersion        string
-	dsn   = os.Getenv("DATA_SOURCE_NAME")
+	// *dataSource   = *dataSource //os.Getenv("DATA_SOURCE_NAME")
 	dbCon *sql.DB
 	// Metrics to scrap. Use external file (default-metrics.toml and custom if provided)
 	metricsToScrap Metrics
 )
 
-type MetricFile struct {
-	metrics []Metric
-}
-
-// type MetricFileMetricsVersion struct {
-// 	V00 []Metric
-// 	V10 []Metric
-// 	V11 []Metric
-// 	V12 []Metric
-// 	V18 []Metric
-// 	V19 []Metric
+// type MetricFile struct {
+// 	metrics []Metric
 // }
 
 // Metrics object description
@@ -103,17 +95,17 @@ func getEnv(key, fallback string) string {
 }
 
 func createDatabaseConnect() {
-	log.Debugln("Launching connection: ", dsn)
-	db, err := sql.Open("godror", dsn)
+	log.Infoln("Launching connection: ", *dataSource)
+	db, err := sql.Open("godror", *dataSource)
 	if err != nil {
-		log.Errorln("Error while connecting to", dsn)
+		log.Errorln("Error while connecting to", *dataSource)
 		panic(err)
 	}
 	log.Debugln("set max idle connections to ", *maxIdleConns)
 	db.SetMaxIdleConns(*maxIdleConns)
 	log.Debugln("set max open connections to ", *maxOpenConns)
 	db.SetMaxOpenConns(*maxOpenConns)
-	log.Debugln("Successfully connected to: ", dsn)
+	log.Debugln("Successfully connected to: ", *dataSource)
 	dbCon = db
 }
 
@@ -185,6 +177,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- e.error
 	e.scrapeErrors.Collect(ch)
 	ch <- e.up
+	fmt.Println("aaaaaaaaaaaaa")
 }
 
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
@@ -220,9 +213,9 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	wg := sync.WaitGroup{}
 
 	for _, metric := range metricsToScrap.Metric {
-		if filterMetric(e.filter, metric.Name) == false {
-			continue
-		}
+		// if filterMetric(e.filter, metric.Name) == false {
+		// 	continue
+		// }
 		wg.Add(1)
 		metric := metric //https://golang.org/doc/faq#closures_and_goroutines
 
@@ -311,6 +304,7 @@ func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string
 		}
 		// Construct Prometheus values to sent back
 		for metric, metricHelp := range metricsDesc {
+
 			value, err := strconv.ParseFloat(strings.TrimSpace(row[metric]), 64)
 			// If not a float, skip current metric
 			if err != nil {
@@ -421,11 +415,12 @@ func GeneratePrometheusMetrics(db *sql.DB, parse func(row map[string]string) err
 	defer rows.Close()
 
 	for rows.Next() {
+
 		// Create a slice of interface{}'s to represent each column,
 		// and a second slice to contain pointers to each item in the columns slice.
 		columns := make([]interface{}, len(cols))
 		columnPointers := make([]interface{}, len(cols))
-		for i := range columns {
+		for i, _ := range columns {
 			columnPointers[i] = &columns[i]
 		}
 
@@ -513,32 +508,13 @@ func readMetricFile() ([]byte, error) {
 func resolveMetrics(content []byte) {
 	// Truncate metricsToScrap
 	metricsToScrap.Metric = []Metric{}
-	metricsFile := MetricFile{}
-
 	// Load default metrics
-	if err := yaml.Unmarshal(content, &metricsFile); err != nil {
+	if err := yaml.Unmarshal(content, &metricsToScrap.Metric); err != nil {
 		log.Errorln(err)
 		panic(errors.New("Error loading metric file content " + *fileMetrics))
 	} else {
 		log.Infoln("Successfully loaded metrics yaml from: " + *fileMetrics)
 	}
-	// append common metrics
-	// metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V00...)
-
-	// switch dbVersion {
-	// case "10":
-	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V10...)
-	// case "11":
-	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V11...)
-	// case "12":
-	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V12...)
-	// case "18":
-	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V18...)
-	// case "19":
-	// 	metricsToScrap.Metric = append(metricsToScrap.Metric, metricsFile.Version.V19...)
-	// default:
-	// 	panic(errors.New("unkown version " + dbVersion))
-	// }
 }
 
 func filterMetric(slice []string, val string) bool {
@@ -559,7 +535,6 @@ func resolveMetricFile() {
 			resolveMetrics(metricContentByte)
 		}
 	}
-	log.Infof("Available Collectors for Oracle Version %s", dbVersion)
 	for _, n := range metricsToScrap.Metric {
 		log.Infof(" - %s", n.Name)
 	}
@@ -592,7 +567,8 @@ func main() {
 
 		}
 		gatherers := prometheus.Gatherers{prometheus.DefaultGatherer}
-		promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, promhttp.HandlerFor(gatherers, opts)).ServeHTTP(w, r)
+		h := promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, promhttp.HandlerFor(gatherers, opts))
+		h.ServeHTTP(w, r)
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<html><head><title>Oracle DB Exporter " + Version + "</title></head><body><h1>Oracle DB Exporter " + Version + "</h1><p><a href='" + *metricPath + "'>Metrics</a></p></body></html>"))
