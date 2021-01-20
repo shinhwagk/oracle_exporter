@@ -23,18 +23,16 @@ import (
 	"github.com/prometheus/common/log"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
-	//Required for debugging
-	//_ "net/http/pprof"
 )
 
 var (
 	// Version will be set at build time.
 	Version       = "0.0.0.dev"
 	listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
-	dataSource    = kingpin.Flag("database.datasource", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").String()
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
 	fileMetrics   = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
 	queryTimeout  = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
+	dataSource    = kingpin.Flag("database.datasource", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").String()
 	maxIdleConns  = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
 	maxOpenConns  = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
 )
@@ -51,10 +49,6 @@ var (
 	dbCon            *sql.DB
 	metricsToScrap   Metrics
 )
-
-// type MetricFile struct {
-// 	metrics []Metric
-// }
 
 // Metrics object description
 type Metric struct {
@@ -151,6 +145,7 @@ func NewExporter(filters []string) *Exporter {
 	}
 }
 
+// Collect implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	metricCh := make(chan prometheus.Metric)
 	doneCh := make(chan struct{})
@@ -187,21 +182,17 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			e.error.Set(1)
 		}
 	}(time.Now())
-
-	if err = dbCon.Ping(); err != nil {
-		if strings.Contains(err.Error(), "sql: database is closed") {
-			log.Infoln("Reconnecting to DB")
+	for {
+		if err = dbCon.Ping(); err != nil {
+			log.Errorln("Error pinging oracle:", err)
+			e.up.Set(0)
 			createDatabaseConnect()
+		} else {
+			log.Debugln("Successfully pinged Oracle database: ")
+			e.up.Set(1)
+			break
 		}
-	}
-	if err = dbCon.Ping(); err != nil {
-		log.Errorln("Error pinging oracle:", err)
-		//dbCon.Close()
-		e.up.Set(0)
-		return
-	} else {
-		log.Debugln("Successfully pinged Oracle database: ")
-		e.up.Set(1)
+		time.Sleep(time.Second * 5)
 	}
 
 	resolveMetricFile()
@@ -463,7 +454,7 @@ func hashFile(h hash.Hash, fn string) error {
 	return nil
 }
 
-func checkIfMetricsChanged(content []byte) (bool, string) {
+func checkMetricFileChanged(content []byte) (bool, string) {
 	newShasum := sha256sum(content)
 	isChange := newShasum == metricFileShasum
 	return !isChange, newShasum
@@ -526,7 +517,7 @@ func resolveMetricFile() {
 	if metricContentByte, err := readMetricFile(); err != nil {
 		panic(errors.New("Read Metric File:" + err.Error()))
 	} else {
-		if isChange, shasum := checkIfMetricsChanged(metricContentByte); isChange {
+		if isChanged, shasum := checkMetricFileChanged(metricContentByte); isChanged {
 			metricFileShasum = shasum
 			resolveMetrics(metricContentByte)
 			for _, n := range metricsToScrap.Metric {
@@ -563,8 +554,9 @@ func main() {
 
 	log.Infoln("Starting oracledb_exporter " + Version)
 
-	resolveMetricFile()
+	// init
 	createDatabaseConnect()
+	resolveMetricFile()
 	// dbVersion = getOracleVersion()
 
 	handlerFunc := newHandler()

@@ -28,3 +28,15 @@ export DATA_SOURCE_NAME=${ip}:${port}/${service_name}
 - tablespace-11g
 - segment-10g
 - segment-11g
+
+```
+http://127.0.0.1:9100/metrics?collect[]=sql-11g
+
+export DATA_SOURCE_NAME=system/oracle@10.65.193.26/orayali3
+
+go run main.go --file.metrics=http://gitlab.wexfin.com/oradba/prom-oracle/raw/master/metric.yml
+```
+
+```sh
+go run main.go --database.datasource system/oracle1171@10.65.193.14:1521/func1 --file.metrics http://gitlab.wexfin.com/oradba/prom-oracle/raw/master/metrics-11g.yaml
+```
