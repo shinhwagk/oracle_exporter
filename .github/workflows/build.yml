@@ -9,7 +9,13 @@ jobs:
         with:
           go-version: 1.15.5
       - run: docker build -t test/test .
-      - run: docker images
+      - run: |
+          version=`cat VERSION`
+          docker build -t shinhwagk/oracle_exporter:$version .
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker tag shinhwagk/oracle_exporter:$version shinhwagk/oracle_exporter:latest
+          docker push shinhwagk/oracle_exporter:$version
+          docker push shinhwagk/oracle_exporter:latest
       # - uses: actions/cache@v1
       #   with:
       #     path: ~/go/pkg/mod

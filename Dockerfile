@@ -31,5 +31,5 @@ RUN echo /usr/lib/oracle/18.3/client64/lib > /etc/ld.so.conf.d/oracle-instantcli
 
 ENV LD_LIBRARY_PATH=/usr/lib/oracle/18.3/client64/lib:$LD_LIBRARY_PATH
 WORKDIR /app
-COPY --from=builder /build/main .
-ENTRYPOINT /app/main
+COPY --from=builder /build/main oracle_exporter
+ENTRYPOINT /app/oracle_exporter
