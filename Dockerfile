@@ -13,7 +13,7 @@ ADD main.go .
 
 RUN yum install -y golang
 
-RUN go env -w GOPROXY=https://goproxy.cn,direct
+# RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN go env -w GO111MODULE="on"
 
 ADD go.mod .
