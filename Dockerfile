@@ -19,7 +19,7 @@ RUN go env -w GO111MODULE="on"
 ADD go.mod .
 ADD go.sum .
 RUN go get -v -u
-RUN GOOS=linux go build main.go
+RUN GOOS=linux go build -o oracle_exporter main.go
 
 FROM oraclelinux:7-slim
 RUN yum install -y oracle-release-el7 && \
@@ -31,5 +31,5 @@ RUN echo /usr/lib/oracle/18.3/client64/lib > /etc/ld.so.conf.d/oracle-instantcli
 
 ENV LD_LIBRARY_PATH=/usr/lib/oracle/18.3/client64/lib:$LD_LIBRARY_PATH
 WORKDIR /app
-COPY --from=builder /build/main oracle_exporter
-ENTRYPOINT /app/oracle_exporter
+COPY --from=builder /build/oracle_exporter oracle_exporter
+ENTRYPOINT ["/app/oracle_exporter"]
