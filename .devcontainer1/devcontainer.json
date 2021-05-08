@@ -1,0 +1,16 @@
+{
+	"name": "oracle_exporter",
+	"dockerFile": "Dockerfile",
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"go.useLanguageServer": true,
+		"go.autocompleteUnimportedPackages": true,
+		"go.formatTool": "gofmt",
+		"editor.formatOnSave": true
+	},
+	"extensions": [
+		"golang.go",
+		"eamodio.gitlens",
+		"redhat.vscode-yaml"
+	]
+}

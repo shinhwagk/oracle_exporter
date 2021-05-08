@@ -515,7 +515,9 @@ func filterMetric(slice []string, val string) bool {
 
 func resolveMetricFile() {
 	if metricContentByte, err := readMetricFile(); err != nil {
-		panic(errors.New("Read Metric File:" + err.Error()))
+		// panic(errors.New("Read Metric File:" + err.Error()))
+		var errReadFile error = errors.New("Read Metric File:" + err.Error())
+		log.Errorf("error:%v", errReadFile)
 	} else {
 		if isChanged, shasum := checkMetricFileChanged(metricContentByte); isChanged {
 			metricFileShasum = shasum
