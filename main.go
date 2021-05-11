@@ -35,7 +35,7 @@ var (
 	// dataSource    = kingpin.Flag("database.datasource", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").String()
 	maxIdleConns = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
 	maxOpenConns = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
-	dataSource   = os.Getenv("database.datasource")
+	dataSource   = os.Getenv("DB_DATA_SOURCE")
 )
 
 // Metric name parts.
