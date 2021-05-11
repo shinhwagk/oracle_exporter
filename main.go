@@ -32,9 +32,10 @@ var (
 	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
 	fileMetrics   = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
 	queryTimeout  = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	dataSource    = kingpin.Flag("database.datasource", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").String()
-	maxIdleConns  = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
-	maxOpenConns  = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
+	// dataSource    = kingpin.Flag("database.datasource", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").String()
+	maxIdleConns = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
+	maxOpenConns = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
+	dataSource   = os.Getenv("database.datasource")
 )
 
 // Metric name parts.
@@ -86,17 +87,17 @@ func getEnv(key, fallback string) string {
 }
 
 func createDatabaseConnect() {
-	log.Infoln("Launching connection: ", *dataSource)
-	db, err := sql.Open("godror", *dataSource)
+	log.Infoln("Launching connection: ", dataSource)
+	db, err := sql.Open("godror", dataSource)
 	if err != nil {
-		log.Errorln("Error while connecting to", *dataSource)
+		log.Errorln("Error while connecting to", dataSource)
 		panic(err)
 	}
 	log.Debugln("set max idle connections to ", *maxIdleConns)
 	db.SetMaxIdleConns(*maxIdleConns)
 	log.Debugln("set max open connections to ", *maxOpenConns)
 	db.SetMaxOpenConns(*maxOpenConns)
-	log.Debugln("Successfully connected to: ", *dataSource)
+	log.Debugln("Successfully connected to: ", dataSource)
 	dbCon = db
 }
 
