@@ -524,7 +524,6 @@ func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) 
 	if mdr.Code == 1 {
 		return nil, errors.New(mdr.Error)
 	}
-	fmt.Println(mdr)
 	return mdr.Result, nil
 }
 
