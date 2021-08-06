@@ -1,4 +1,4 @@
-FROM golang:1
+FROM golang:1 as builder
 
 WORKDIR /build
 ADD main.go .
