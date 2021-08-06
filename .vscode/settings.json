@@ -1,3 +1,7 @@
 {
   "editor.formatOnSave": true,
+  "editor.insertSpaces": true,
+  "go.toolsEnvVars": {
+    "GOPROXY": "https://goproxy.io,direct"
+  }
 }

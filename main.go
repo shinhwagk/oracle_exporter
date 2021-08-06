@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
+	"bytes"
 	"crypto/sha256"
-	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"hash"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,8 +13,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	_ "github.com/godror/godror"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -27,15 +23,13 @@ import (
 
 var (
 	// Version will be set at build time.
-	Version       = "0.0.0.dev"
-	listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
-	metricPath    = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
-	fileMetrics   = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
-	queryTimeout  = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	// dataSource    = kingpin.Flag("database.datasource", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").String()
-	maxIdleConns = kingpin.Flag("database.maxIdleConns", "Number of maximum idle connections in the connection pool. (env: DATABASE_MAXIDLECONNS)").Default(getEnv("DATABASE_MAXIDLECONNS", "0")).Int()
-	maxOpenConns = kingpin.Flag("database.maxOpenConns", "Number of maximum open connections in the connection pool. (env: DATABASE_MAXOPENCONNS)").Default(getEnv("DATABASE_MAXOPENCONNS", "10")).Int()
-	dataSource   = os.Getenv("POE_DB_DATA_SOURCE") // prometheus oracle exporter
+	Version           = "0.0.0.dev"
+	listenAddress     = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
+	metricPath        = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
+	fileMetrics       = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
+	queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
+	multidatabaseUrl  = os.Getenv("MULTIDATABASE_URL") // prometheus oracle exporter
+	multidatabaseDbId = os.Getenv("MULTIDATABASE_DBID")
 )
 
 // Metric name parts.
@@ -47,8 +41,8 @@ const (
 // global variables
 var (
 	metricFileShasum string
-	dbCon            *sql.DB
 	metricsToScrap   Metrics
+	md               MultiDatabase
 )
 
 // Metrics object description
@@ -84,30 +78,6 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
-}
-
-func createDatabaseConnect() {
-	log.Infoln("Launching connection: ", dataSource)
-	db, err := sql.Open("godror", dataSource)
-	if err != nil {
-		log.Errorln("Error while connecting to", dataSource)
-		panic(err)
-	}
-	log.Debugln("set max idle connections to ", *maxIdleConns)
-	db.SetMaxIdleConns(*maxIdleConns)
-	log.Debugln("set max open connections to ", *maxOpenConns)
-	db.SetMaxOpenConns(*maxOpenConns)
-	log.Debugln("Successfully connected to: ", dataSource)
-	dbCon = db
-}
-
-func getOracleVersion() string {
-	var version string
-	rows := dbCon.QueryRow("SELECT SUBSTR(version,0,2) FROM product_component_version WHERE UPPER(product) LIKE '%DATABASE%'")
-	if err := rows.Scan(&version); err != nil {
-		log.Errorln("quay database version faile:%s", err)
-	}
-	return version
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
@@ -184,10 +154,9 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		}
 	}(time.Now())
 	for {
-		if err = dbCon.Ping(); err != nil {
+		if err = md.Ping(); err != nil {
 			log.Errorln("Error pinging oracle:", err)
 			e.up.Set(0)
-			createDatabaseConnect()
 		} else {
 			log.Debugln("Successfully pinged Oracle database: ")
 			e.up.Set(1)
@@ -201,7 +170,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	wg := sync.WaitGroup{}
 
 	for _, metric := range metricsToScrap.Metric {
-		if filterMetric(e.filter, metric.Name) == false {
+		if !filterMetric(e.filter, metric.Name) {
 			continue
 		}
 		wg.Add(1)
@@ -242,7 +211,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			}
 
 			scrapeStart := time.Now()
-			if err = ScrapeMetric(dbCon, ch, metric); err != nil {
+			if err = ScrapeMetric(ch, metric); err != nil {
 				log.Errorln("Error scraping for", metric.Name, "_", metric.Context, ":", err)
 				e.scrapeErrors.WithLabelValues(metric.Context).Inc()
 			} else {
@@ -272,17 +241,17 @@ func GetMetricType(metricType string, metricsType map[string]string) prometheus.
 }
 
 // interface method to call ScrapeGenericValues using Metric struct values
-func ScrapeMetric(db *sql.DB, ch chan<- prometheus.Metric, metricDefinition Metric) error {
+func ScrapeMetric(ch chan<- prometheus.Metric, metricDefinition Metric) error {
 	log.Debugln("Calling function ScrapeGenericValues()")
-	return ScrapeGenericValues(db, ch, metricDefinition.Context, metricDefinition.Labels,
+	return ScrapeGenericValues(ch, metricDefinition.Context, metricDefinition.Labels,
 		metricDefinition.MetricsDesc, metricDefinition.MetricsType, metricDefinition.MetricsBuckets,
 		metricDefinition.FieldToAppend, metricDefinition.IgnoreZeroResult,
 		metricDefinition.Request)
 }
 
 // generic method for retrieving metrics.
-func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string, labels []string,
-	metricsDesc map[string]string, metricsType map[string]string, metricsBuckets map[string]map[string]string, fieldToAppend string, ignoreZeroResult bool, request string) error {
+func ScrapeGenericValues(ch chan<- prometheus.Metric, context string, labels []string,
+	metricsDesc map[string]string, metricsType map[string]string, metricsBuckets map[string]map[string]string, fieldToAppend string, ignoreZeroResult bool, sqlText string) error {
 	metricsCount := 0
 	genericParser := func(row map[string]string) error {
 		// Construct labels value
@@ -367,7 +336,7 @@ func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string
 		}
 		return nil
 	}
-	err := GeneratePrometheusMetrics(db, genericParser, request)
+	err := GeneratePrometheusMetrics(genericParser, sqlText)
 	log.Debugln("ScrapeGenericValues() - metricsCount: ", metricsCount)
 	if err != nil {
 		return err
@@ -380,51 +349,24 @@ func ScrapeGenericValues(db *sql.DB, ch chan<- prometheus.Metric, context string
 
 // inspired by https://kylewbanks.com/blog/query-result-to-map-in-golang
 // Parse SQL result and call parsing function to each row
-func GeneratePrometheusMetrics(db *sql.DB, parse func(row map[string]string) error, query string) error {
+func GeneratePrometheusMetrics(parse func(row map[string]string) error, sqlText string) error {
+	rows, err := md.Query(sqlText)
 
-	// Add a timeout
-	timeout, err := strconv.Atoi(*queryTimeout)
-	if err != nil {
-		log.Fatal("error while converting timeout option value: ", err)
-		panic(err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-	defer cancel()
-	rows, err := db.QueryContext(ctx, query)
-
-	if ctx.Err() == context.DeadlineExceeded {
-		return errors.New("Oracle query timed out")
-	}
+	// if ctx.Err() == context.DeadlineExceeded {
+	// 	return errors.New("Oracle query timed out")
+	// }
 
 	if err != nil {
 		return err
 	}
-	cols, err := rows.Columns()
-	defer rows.Close()
 
-	for rows.Next() {
+	for _, row := range rows {
 
-		// Create a slice of interface{}'s to represent each column,
-		// and a second slice to contain pointers to each item in the columns slice.
-		columns := make([]interface{}, len(cols))
-		columnPointers := make([]interface{}, len(cols))
-		for i, _ := range columns {
-			columnPointers[i] = &columns[i]
-		}
-
-		// Scan the result into the column pointers...
-		if err := rows.Scan(columnPointers...); err != nil {
-			return err
-		}
-
-		// Create our map, and retrieve the value for each column from the pointers slice,
-		// storing it in the map with the name of the column as the key.
 		m := make(map[string]string)
-		for i, colName := range cols {
-			val := columnPointers[i].(*interface{})
-			m[strings.ToLower(colName)] = fmt.Sprintf("%v", *val)
+		for col, val := range row {
+			m[strings.ToLower(col)] = fmt.Sprintf("%v", val)
 		}
-		// Call function to parse row
+
 		if err := parse(m); err != nil {
 			return err
 		}
@@ -441,18 +383,6 @@ func cleanName(s string) string {
 	s = strings.Replace(s, "*", "", -1)  // Remove asterisks
 	s = strings.ToLower(s)
 	return s
-}
-
-func hashFile(h hash.Hash, fn string) error {
-	f, err := os.Open(fn)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if _, err := io.Copy(h, f); err != nil {
-		return err
-	}
-	return nil
 }
 
 func checkMetricFileChanged(content []byte) (bool, string) {
@@ -549,7 +479,57 @@ func newHandler() http.HandlerFunc {
 	}
 }
 
+type MultiDatabase struct {
+	Url  string
+	DbId string
+}
+
+type MultiDatabasePost struct {
+	DbId    string        `json:"db_id"`
+	SqlText string        `json:"sql_text"`
+	Binds   []interface{} `json:"binds"`
+}
+
+type MultiDatabaseResult struct {
+	Code   int                      `json:"code"`
+	DbId   string                   `json:"db_id"`
+	Error  string                   `json:"error"`
+	Result []map[string]interface{} `json:"result"`
+}
+
+func (md MultiDatabase) Ping() error {
+	_, err := md.Query("select * from dual")
+	return err
+}
+
+func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) {
+	json_data, err := json.Marshal(MultiDatabasePost{md.DbId, sqlText, []interface{}{}})
+
+	if err != nil {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("http://%s:8000/query", md.Url)
+	resp, err := http.Post(url, "application/json",
+		bytes.NewBuffer(json_data))
+
+	if err != nil {
+		return nil, err
+	}
+
+	var mdr MultiDatabaseResult
+
+	json.NewDecoder(resp.Body).Decode(&mdr)
+
+	if mdr.Code == 1 {
+		return nil, errors.New(mdr.Error)
+	}
+	fmt.Println(mdr)
+	return mdr.Result, nil
+}
+
 func main() {
+
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Version("oracle_exporter " + Version)
 	kingpin.HelpFlag.Short('h')
@@ -558,9 +538,8 @@ func main() {
 	log.Infoln("Starting oracledb_exporter " + Version)
 
 	// init
-	createDatabaseConnect()
 	resolveMetricFile()
-	// dbVersion = getOracleVersion()
+	md = MultiDatabase{Url: multidatabaseUrl, DbId: multidatabaseDbId}
 
 	handlerFunc := newHandler()
 	http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
