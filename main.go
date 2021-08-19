@@ -510,15 +510,20 @@ func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) 
 	}
 
 	url := fmt.Sprintf("http://%s/query", md.Addr)
-	resp, err := http.Post(url, "application/json",
-		bytes.NewBuffer(json_data))
-
+	// resp, err := http.Post(url, "application/json",
+	// 	bytes.NewBuffer(json_data))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json_data))
+	req.Header.Set("multidatabase-dbid", md.DbId)
 	if err != nil {
 		return nil, err
 	}
-
+	c := http.DefaultClient
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	var mdr MultiDatabaseResult
-
+	defer resp.Body.Close()
 	json.NewDecoder(resp.Body).Decode(&mdr)
 
 	if mdr.Code == 1 {
