@@ -28,7 +28,7 @@ var (
 	metricPath        = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
 	fileMetrics       = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
 	queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	multidatabaseAddr = os.Getenv("MULTIDATABASE_ADDR") // prometheus oracle exporter
+	multidatabaseAddr = kingpin.Flag("query.addr", "multidatabase addr").Default(getEnv("MULTIDATABASE_ADDR", "")).String()
 	multidatabaseDbId = os.Getenv("MULTIDATABASE_DBID")
 )
 
