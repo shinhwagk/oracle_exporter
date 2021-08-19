@@ -538,7 +538,7 @@ func main() {
 
 	// init
 	resolveMetricFile()
-	md = MultiDatabase{Addr: multidatabaseAddr, DbId: multidatabaseDbId}
+	md = MultiDatabase{Addr: *multidatabaseAddr, DbId: multidatabaseDbId}
 
 	handlerFunc := newHandler()
 	http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
