@@ -28,7 +28,7 @@ var (
 	metricPath        = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
 	fileMetrics       = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
 	queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	multidatabaseUrl  = os.Getenv("MULTIDATABASE_URL") // prometheus oracle exporter
+	multidatabaseAddr = os.Getenv("MULTIDATABASE_ADDR") // prometheus oracle exporter
 	multidatabaseDbId = os.Getenv("MULTIDATABASE_DBID")
 )
 
@@ -480,7 +480,7 @@ func newHandler() http.HandlerFunc {
 }
 
 type MultiDatabase struct {
-	Url  string
+	Addr string
 	DbId string
 }
 
@@ -509,7 +509,7 @@ func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) 
 		return nil, err
 	}
 
-	url := fmt.Sprintf("http://%s:8000/query", md.Url)
+	url := fmt.Sprintf("http://%s/query", md.Addr)
 	resp, err := http.Post(url, "application/json",
 		bytes.NewBuffer(json_data))
 
@@ -538,7 +538,7 @@ func main() {
 
 	// init
 	resolveMetricFile()
-	md = MultiDatabase{Url: multidatabaseUrl, DbId: multidatabaseDbId}
+	md = MultiDatabase{Addr: multidatabaseAddr, DbId: multidatabaseDbId}
 
 	handlerFunc := newHandler()
 	http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
