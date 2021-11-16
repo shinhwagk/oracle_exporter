@@ -153,16 +153,14 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			e.error.Set(1)
 		}
 	}(time.Now())
-	for {
-		if err = md.Ping(); err != nil {
-			log.Errorln("Error pinging oracle:", err)
-			e.up.Set(0)
-		} else {
-			log.Debugln("Successfully pinged Oracle database: ")
-			e.up.Set(1)
-			break
-		}
-		time.Sleep(time.Second * 5)
+
+	if err = md.Ping(); err != nil {
+		e.up.Set(0)
+		log.Errorln("Error pinging oracle:", err)
+		return
+	} else {
+		e.up.Set(1)
+		log.Debugln("Successfully pinged Oracle database: ")
 	}
 
 	resolveMetricFile()
