@@ -163,7 +163,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		log.Debugln("Successfully pinged Oracle database: ")
 	}
 
-	resolveMetricFile()
+	// resolveMetricFile()
 
 	wg := sync.WaitGroup{}
 
