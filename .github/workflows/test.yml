@@ -7,7 +7,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     container:
-      image: oraclelinux:7
+      image: shinhwagk/oraclepython
     services:
       oracle11g:
         image: wnameless/oracle-xe-11g-r2
@@ -17,4 +17,4 @@ jobs:
           - 6379:1521
     steps:
       - name: Check out the repo
-        run: cat /etc/redhat*
+        run: cat /etc/redhat* && sqlplus --version
