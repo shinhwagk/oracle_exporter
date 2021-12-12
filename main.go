@@ -1,35 +1,36 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
+	stdlog "log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
-	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/web"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 )
 
 var (
 	// Version will be set at build time.
-	Version           = "0.0.0.dev"
-	listenAddress     = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
-	metricPath        = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
-	fileMetrics       = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
-	queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
+	Version = "0.0.0.dev"
+	// listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
+	// metricPath        = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
+	fileMetrics = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
+	// queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
 	multidatabaseAddr = kingpin.Flag("query.addr", "multidatabase addr").Default(getEnv("MULTIDATABASE_ADDR", "")).String()
-	multidatabaseDbId = os.Getenv("MULTIDATABASE_DBID")
 )
 
 // Metric name parts.
@@ -38,11 +39,18 @@ const (
 	exporter  = "exporter"
 )
 
+type handler struct {
+	// exporterMetricsRegistry is a separate registry for the metrics about
+	// the exporter itself.
+	exporterMetricsRegistry *prometheus.Registry
+	includeExporterMetrics  bool
+	maxRequests             int
+	logger                  log.Logger
+}
+
 // global variables
 var (
-	metricFileShasum string
-	metricsToScrap   Metrics
-	md               MultiDatabase
+	metricsToScrap Metrics
 )
 
 // Metrics object description
@@ -65,7 +73,10 @@ type Metrics struct {
 
 // Exporter collects Oracle DB metrics. It implements prometheus.Collector.
 type Exporter struct {
-	filter          []string
+	logger          log.Logger
+	md              MultiDatabase
+	mp              MetricProcessor
+	collects        []string
 	duration, error prometheus.Gauge
 	totalScrapes    prometheus.Counter
 	scrapeErrors    *prometheus.CounterVec
@@ -81,9 +92,12 @@ func getEnv(key, fallback string) string {
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
-func NewExporter(filters []string) *Exporter {
+func NewExporter(collects []string, dbid string, logger log.Logger) *Exporter {
 	return &Exporter{
-		filter: filters,
+		logger:   logger,
+		md:       MultiDatabase{Addr: *multidatabaseAddr, DbId: dbid, logger: logger},
+		collects: collects,
+		mp:       MetricProcessor{logger: logger},
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: exporter,
@@ -154,13 +168,13 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		}
 	}(time.Now())
 
-	if err = md.Ping(); err != nil {
+	if err = e.md.Ping(); err != nil {
 		e.up.Set(0)
-		log.Errorln("Error pinging oracle:", err)
+		level.Error(e.logger).Log("Error pinging oracle:", err)
 		return
 	} else {
 		e.up.Set(1)
-		log.Debugln("Successfully pinged Oracle database: ")
+		level.Debug(e.logger).Log("msg", "Successfully pinged Oracle database: ")
 	}
 
 	// resolveMetricFile()
@@ -168,7 +182,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	wg := sync.WaitGroup{}
 
 	for _, metric := range metricsToScrap.Metric {
-		if !filterMetric(e.filter, metric.Name) {
+		if !filterMetric(e.collects, metric.Name) {
 			continue
 		}
 		wg.Add(1)
@@ -177,24 +191,24 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		go func() {
 			defer wg.Done()
 
-			log.Debugln("About to scrape metric: ")
-			log.Debugln("- Metric MetricsDesc: ", metric.MetricsDesc)
-			log.Debugln("- Metric Name: ", metric.Name)
-			log.Debugln("- Metric Context: ", metric.Context)
-			log.Debugln("- Metric MetricsType: ", metric.MetricsType)
-			log.Debugln("- Metric MetricsBuckets: ", metric.MetricsBuckets, "(Ignored unless Histogram type)")
-			log.Debugln("- Metric Labels: ", metric.Labels)
-			log.Debugln("- Metric FieldToAppend: ", metric.FieldToAppend)
-			log.Debugln("- Metric IgnoreZeroResult: ", metric.IgnoreZeroResult)
-			log.Debugln("- Metric Request: ", metric.Request)
+			level.Debug(e.logger).Log("About to scrape metric: ")
+			level.Debug(e.logger).Log("- Metric MetricsDesc: ", metric.MetricsDesc)
+			level.Debug(e.logger).Log("- Metric Name: ", metric.Name)
+			level.Debug(e.logger).Log("- Metric Context: ", metric.Context)
+			level.Debug(e.logger).Log("- Metric MetricsType: ", metric.MetricsType)
+			level.Debug(e.logger).Log("- Metric MetricsBuckets: ", metric.MetricsBuckets, "(Ignored unless Histogram type)")
+			level.Debug(e.logger).Log("- Metric Labels: ", metric.Labels)
+			level.Debug(e.logger).Log("- Metric FieldToAppend: ", metric.FieldToAppend)
+			level.Debug(e.logger).Log("- Metric IgnoreZeroResult: ", metric.IgnoreZeroResult)
+			level.Debug(e.logger).Log("- Metric Request: ", metric.Request)
 
 			if len(metric.Request) == 0 {
-				log.Errorln("Error scraping for ", metric.MetricsDesc, ". Did you forget to define request in your toml file?")
+				level.Error(e.logger).Log("Error scraping for ", metric.MetricsDesc, ". Did you forget to define request in your toml file?")
 				return
 			}
 
 			if len(metric.MetricsDesc) == 0 {
-				log.Errorln("Error scraping for query", metric.Request, ". Did you forget to define metricsdesc in your toml file?")
+				level.Error(e.logger).Log("Error scraping for query", metric.Request, ". Did you forget to define metricsdesc in your toml file?")
 				return
 			}
 
@@ -202,212 +216,48 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 				if metricType == "histogram" {
 					_, ok := metric.MetricsBuckets[column]
 					if !ok {
-						log.Errorln("Unable to find MetricsBuckets configuration key for metric. (metric=" + column + ")")
+						level.Error(e.logger).Log("Unable to find MetricsBuckets configuration key for metric. (metric=" + column + ")")
 						return
 					}
 				}
 			}
 
 			scrapeStart := time.Now()
-			if err = ScrapeMetric(ch, metric); err != nil {
-				log.Errorln("Error scraping for", metric.Name, "_", metric.Context, ":", err)
+			if err = e.mp.ScrapeMetric(ch, e.md, metric); err != nil {
+				level.Error(e.logger).Log("Error scraping for", metric.Name, "_", metric.Context, ":", err)
 				e.scrapeErrors.WithLabelValues(metric.Context).Inc()
 			} else {
-				log.Debugln("Successfully scraped metric: ", metric.Context, metric.MetricsDesc, time.Since(scrapeStart))
+				level.Debug(e.logger).Log("Successfully scraped metric: ", metric.Context, metric.MetricsDesc, time.Since(scrapeStart))
 			}
 		}()
 	}
 	wg.Wait()
 }
 
-func GetMetricType(metricType string, metricsType map[string]string) prometheus.ValueType {
-	var strToPromType = map[string]prometheus.ValueType{
-		"gauge":     prometheus.GaugeValue,
-		"counter":   prometheus.CounterValue,
-		"histogram": prometheus.UntypedValue,
-	}
+// func checkMetricFileChanged(content []byte) (bool, string) {
+// 	newShasum := sha256sum(content)
+// 	isChange := newShasum == metricFileShasum
+// 	return !isChange, newShasum
+// }
 
-	strType, ok := metricsType[strings.ToLower(metricType)]
-	if !ok {
-		return prometheus.GaugeValue
-	}
-	valueType, ok := strToPromType[strings.ToLower(strType)]
-	if !ok {
-		panic(errors.New("Error while getting prometheus type " + strings.ToLower(strType)))
-	}
-	return valueType
-}
+// func sha256sum(content []byte) string {
+// 	h := sha256.New()
+// 	h.Write(content)
+// 	return string(h.Sum(nil))
+// }
 
-// interface method to call ScrapeGenericValues using Metric struct values
-func ScrapeMetric(ch chan<- prometheus.Metric, metricDefinition Metric) error {
-	log.Debugln("Calling function ScrapeGenericValues()")
-	return ScrapeGenericValues(ch, metricDefinition.Context, metricDefinition.Labels,
-		metricDefinition.MetricsDesc, metricDefinition.MetricsType, metricDefinition.MetricsBuckets,
-		metricDefinition.FieldToAppend, metricDefinition.IgnoreZeroResult,
-		metricDefinition.Request)
-}
-
-// generic method for retrieving metrics.
-func ScrapeGenericValues(ch chan<- prometheus.Metric, context string, labels []string,
-	metricsDesc map[string]string, metricsType map[string]string, metricsBuckets map[string]map[string]string, fieldToAppend string, ignoreZeroResult bool, sqlText string) error {
-	metricsCount := 0
-	genericParser := func(row map[string]string) error {
-		// Construct labels value
-		labelsValues := []string{}
-		for _, label := range labels {
-			labelsValues = append(labelsValues, row[label])
-		}
-		// Construct Prometheus values to sent back
-		for metric, metricHelp := range metricsDesc {
-
-			value, err := strconv.ParseFloat(strings.TrimSpace(row[metric]), 64)
-			// If not a float, skip current metric
-			if err != nil {
-				log.Errorln("Unable to convert current value to float (metric=" + metric + ",metricHelp=" + metricHelp + ",value=<" + row[metric] + ">)")
-				continue
-			}
-			log.Debugln("Query result looks like: ", value)
-			// If metric do not use a field content in metric's name
-			if strings.Compare(fieldToAppend, "") == 0 {
-				desc := prometheus.NewDesc(
-					prometheus.BuildFQName(namespace, context, metric),
-					metricHelp,
-					labels, nil,
-				)
-				if metricsType[strings.ToLower(metric)] == "histogram" {
-					count, err := strconv.ParseUint(strings.TrimSpace(row["count"]), 10, 64)
-					if err != nil {
-						log.Errorln("Unable to convert count value to int (metric=" + metric + ",metricHelp=" + metricHelp + ",value=<" + row["count"] + ">)")
-						continue
-					}
-					buckets := make(map[float64]uint64)
-					for field, le := range metricsBuckets[metric] {
-						lelimit, err := strconv.ParseFloat(strings.TrimSpace(le), 64)
-						if err != nil {
-							log.Errorln("Unable to convert bucket limit value to float (metric=" + metric + ",metricHelp=" + metricHelp + ",bucketlimit=<" + le + ">)")
-							continue
-						}
-						counter, err := strconv.ParseUint(strings.TrimSpace(row[field]), 10, 64)
-						if err != nil {
-							log.Errorln("Unable to convert ", field, " value to int (metric="+metric+",metricHelp="+metricHelp+",value=<"+row[field]+">)")
-							continue
-						}
-						buckets[lelimit] = counter
-					}
-					ch <- prometheus.MustNewConstHistogram(desc, count, value, buckets, labelsValues...)
-				} else {
-					ch <- prometheus.MustNewConstMetric(desc, GetMetricType(metric, metricsType), value, labelsValues...)
-				}
-				// If no labels, use metric name
-			} else {
-				desc := prometheus.NewDesc(
-					prometheus.BuildFQName(namespace, context, cleanName(row[fieldToAppend])),
-					metricHelp,
-					nil, nil,
-				)
-				if metricsType[strings.ToLower(metric)] == "histogram" {
-					count, err := strconv.ParseUint(strings.TrimSpace(row["count"]), 10, 64)
-					if err != nil {
-						log.Errorln("Unable to convert count value to int (metric=" + metric + ",metricHelp=" + metricHelp + ",value=<" + row["count"] + ">)")
-						continue
-					}
-					buckets := make(map[float64]uint64)
-					for field, le := range metricsBuckets[metric] {
-						lelimit, err := strconv.ParseFloat(strings.TrimSpace(le), 64)
-						if err != nil {
-							log.Errorln("Unable to convert bucket limit value to float (metric=" + metric + ",metricHelp=" + metricHelp + ",bucketlimit=<" + le + ">)")
-							continue
-						}
-						counter, err := strconv.ParseUint(strings.TrimSpace(row[field]), 10, 64)
-						if err != nil {
-							log.Errorln("Unable to convert ", field, " value to int (metric="+metric+",metricHelp="+metricHelp+",value=<"+row[field]+">)")
-							continue
-						}
-						buckets[lelimit] = counter
-					}
-					ch <- prometheus.MustNewConstHistogram(desc, count, value, buckets)
-				} else {
-					ch <- prometheus.MustNewConstMetric(desc, GetMetricType(metric, metricsType), value)
-				}
-			}
-			metricsCount++
-		}
-		return nil
-	}
-	err := GeneratePrometheusMetrics(genericParser, sqlText)
-	log.Debugln("ScrapeGenericValues() - metricsCount: ", metricsCount)
-	if err != nil {
-		return err
-	}
-	// if !ignoreZeroResult && metricsCount == 0 {
-	// 	return errors.New("No metrics found while parsing")
-	// }
-	return err
-}
-
-// inspired by https://kylewbanks.com/blog/query-result-to-map-in-golang
-// Parse SQL result and call parsing function to each row
-func GeneratePrometheusMetrics(parse func(row map[string]string) error, sqlText string) error {
-	rows, err := md.Query(sqlText)
-
-	// if ctx.Err() == context.DeadlineExceeded {
-	// 	return errors.New("Oracle query timed out")
-	// }
-
-	if err != nil {
-		return err
-	}
-
-	for _, row := range rows {
-
-		m := make(map[string]string)
-		for col, val := range row {
-			m[strings.ToLower(col)] = fmt.Sprintf("%v", val)
-		}
-
-		if err := parse(m); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Oracle gives us some ugly names back. This function cleans things up for Prometheus.
-func cleanName(s string) string {
-	s = strings.Replace(s, " ", "_", -1) // Remove spaces
-	s = strings.Replace(s, "(", "", -1)  // Remove open parenthesis
-	s = strings.Replace(s, ")", "", -1)  // Remove close parenthesis
-	s = strings.Replace(s, "/", "", -1)  // Remove forward slashes
-	s = strings.Replace(s, "*", "", -1)  // Remove asterisks
-	s = strings.ToLower(s)
-	return s
-}
-
-func checkMetricFileChanged(content []byte) (bool, string) {
-	newShasum := sha256sum(content)
-	isChange := newShasum == metricFileShasum
-	return !isChange, newShasum
-}
-
-func sha256sum(content []byte) string {
-	h := sha256.New()
-	h.Write(content)
-	return string(h.Sum(nil))
-}
-
-func readMetricFile() ([]byte, error) {
-	metricsPath := *fileMetrics
+func resolveMetrics(metricsPath string, logger log.Logger) error {
 	var metricsBytes []byte
 	var err error
 	if strings.HasPrefix(metricsPath, "http://") || strings.HasPrefix(metricsPath, "https://") {
 		var resp *http.Response
 		resp, err = http.Get(metricsPath)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		defer resp.Body.Close()
 		if body, err := ioutil.ReadAll(resp.Body); err != nil {
-			return nil, err
+			return err
 		} else {
 			metricsBytes = body
 		}
@@ -415,22 +265,14 @@ func readMetricFile() ([]byte, error) {
 		var err error
 		metricsBytes, err = ioutil.ReadFile(metricsPath)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return metricsBytes, nil
-}
 
-func resolveMetrics(content []byte) {
-	// Truncate metricsToScrap
 	metricsToScrap.Metric = []Metric{}
 	// Load default metrics
-	if err := yaml.Unmarshal(content, &metricsToScrap.Metric); err != nil {
-		log.Errorln(err)
-		panic(errors.New("Error loading metric file content " + *fileMetrics))
-	} else {
-		log.Infoln("Successfully loaded metrics yaml from: " + *fileMetrics)
-	}
+	err = yaml.Unmarshal(metricsBytes, &metricsToScrap.Metric)
+	return err
 }
 
 func filterMetric(slice []string, val string) bool {
@@ -442,112 +284,134 @@ func filterMetric(slice []string, val string) bool {
 	return false
 }
 
-func resolveMetricFile() {
-	if metricContentByte, err := readMetricFile(); err != nil {
-		// panic(errors.New("Read Metric File:" + err.Error()))
-		var errReadFile error = errors.New("Read Metric File:" + err.Error())
-		log.Errorf("error:%v", errReadFile)
-	} else {
-		if isChanged, shasum := checkMetricFileChanged(metricContentByte); isChanged {
-			metricFileShasum = shasum
-			resolveMetrics(metricContentByte)
-			for _, n := range metricsToScrap.Metric {
-				log.Infof(" - %s", n.Name)
-			}
-		}
+func newHandler(includeExporterMetrics bool, maxRequests int, logger log.Logger) *handler {
+	h := &handler{
+		exporterMetricsRegistry: prometheus.NewRegistry(),
+		includeExporterMetrics:  includeExporterMetrics,
+		maxRequests:             maxRequests,
+		logger:                  logger,
 	}
-}
-
-func newHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		filters := r.URL.Query()["collect[]"]
-		log.Debugln("collect query:", filters)
-		registry := prometheus.NewRegistry()
-		exporter := NewExporter(filters)
-		err := registry.Register(exporter)
-		if err != nil {
-			log.Errorln("Prometheus register error %s", err)
-		}
-		gatherers := prometheus.Gatherers{
-			prometheus.DefaultGatherer,
-			registry,
-		}
-		h := promhttp.HandlerFor(gatherers, promhttp.HandlerOpts{})
-		h.ServeHTTP(w, r)
+	if h.includeExporterMetrics {
+		h.exporterMetricsRegistry.MustRegister(
+			promcollectors.NewProcessCollector(promcollectors.ProcessCollectorOpts{}),
+			promcollectors.NewGoCollector(),
+		)
 	}
+	return h
 }
 
-type MultiDatabase struct {
-	Addr string
-	DbId string
-}
+func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	collects := r.URL.Query()["collect[]"]
+	level.Debug(h.logger).Log("msg", "collect query:", "collects", collects)
 
-type MultiDatabasePost struct {
-	DbId    string        `json:"db_id"`
-	SqlText string        `json:"sql_text"`
-	Binds   []interface{} `json:"binds"`
-}
+	params_dbid := r.URL.Query()["dbid"]
 
-type MultiDatabaseResult struct {
-	Code   int                      `json:"code"`
-	DbId   string                   `json:"db_id"`
-	Error  string                   `json:"error"`
-	Result []map[string]interface{} `json:"result"`
-}
+	level.Debug(h.logger).Log("msg", "dbid query:", "collects", params_dbid)
+	if len(params_dbid) != 1 || len(collects) == 0 {
+		// level.Warn(h.logger).Log("msg", "Couldn't create filtered metrics handler:", "err", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf("Couldn't create filtered metrics handler: %s", "err")))
+		return
+	}
 
-func (md MultiDatabase) Ping() error {
-	_, err := md.Query("select * from dual")
-	return err
-}
-
-func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) {
-	json_data, err := json.Marshal(MultiDatabasePost{md.DbId, sqlText, []interface{}{}})
-
+	// To serve filtered metrics, we create a filtering handler on the fly.
+	filteredHandler, err := h.innerHandler(params_dbid[0], collects)
 	if err != nil {
-		return nil, err
+		level.Warn(h.logger).Log("msg", "Couldn't create filtered metrics handler:", "err", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf("Couldn't create filtered metrics handler: %s", err)))
+		return
+	}
+	filteredHandler.ServeHTTP(w, r)
+}
+
+func (h *handler) innerHandler(dbid string, collects []string) (http.Handler, error) {
+	r := prometheus.NewRegistry()
+	r.MustRegister(version.NewCollector("oracle_exporter"))
+	exporter := NewExporter(collects, dbid, h.logger)
+	if err := r.Register(exporter); err != nil {
+		return nil, fmt.Errorf("couldn't register node collector: %s", err)
 	}
 
-	url := fmt.Sprintf("http://%s/query", md.Addr)
-	// resp, err := http.Post(url, "application/json",
-	// 	bytes.NewBuffer(json_data))
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json_data))
-	req.Header.Set("multidatabase-dbid", md.DbId)
-	if err != nil {
-		return nil, err
+	handler := promhttp.HandlerFor(
+		prometheus.Gatherers{h.exporterMetricsRegistry, r},
+		promhttp.HandlerOpts{
+			ErrorLog:            stdlog.New(log.NewStdlibAdapter(level.Error(h.logger)), "", 0),
+			ErrorHandling:       promhttp.ContinueOnError,
+			MaxRequestsInFlight: h.maxRequests,
+			Registry:            h.exporterMetricsRegistry,
+		},
+	)
+	if h.includeExporterMetrics {
+		// Note that we have to use h.exporterMetricsRegistry here to
+		// use the same promhttp metrics for all expositions.
+		handler = promhttp.InstrumentMetricHandler(
+			h.exporterMetricsRegistry, handler,
+		)
 	}
-	c := http.DefaultClient
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	var mdr MultiDatabaseResult
-	defer resp.Body.Close()
-	json.NewDecoder(resp.Body).Decode(&mdr)
-
-	if mdr.Code == 1 {
-		return nil, errors.New(mdr.Error)
-	}
-	return mdr.Result, nil
+	return handler, nil
 }
 
 func main() {
+	var (
+		listenAddress = kingpin.Flag(
+			"web.listen-address",
+			"Address on which to expose metrics and web interface.",
+		).Default(":9521").String()
+		metricsPath = kingpin.Flag(
+			"web.telemetry-path",
+			"Path under which to expose metrics.",
+		).Default("/metrics").String()
+		disableExporterMetrics = kingpin.Flag(
+			"web.disable-exporter-metrics",
+			"Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).",
+		).Bool()
+		maxRequests = kingpin.Flag(
+			"web.max-requests",
+			"Maximum number of parallel scrape requests. Use 0 to disable.",
+		).Default("40").Int()
+		configFile = kingpin.Flag(
+			"web.config",
+			"[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.",
+		).Default("").String()
+	)
 
-	log.AddFlags(kingpin.CommandLine)
-	kingpin.Version("oracle_exporter " + Version)
+	promlogConfig := &promlog.Config{}
+	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	kingpin.Version(version.Print("oracle_exporter"))
+	kingpin.CommandLine.UsageWriter(os.Stdout)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
+	logger := promlog.New(promlogConfig)
 
-	log.Infoln("Starting oracledb_exporter " + Version)
+	level.Info(logger).Log("msg", "Starting oracledb_exporter", "version", version.Info())
+	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
 
-	// init
-	resolveMetricFile()
-	md = MultiDatabase{Addr: *multidatabaseAddr, DbId: multidatabaseDbId}
+	if err := resolveMetrics(*metricsPath, logger); err != nil {
+		level.Error(logger).Log("err", err)
+		os.Exit(1)
+	}
 
-	handlerFunc := newHandler()
-	http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
+	http.Handle(*metricsPath, newHandler(!*disableExporterMetrics, *maxRequests, logger))
+	// http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("<html><head><title>Oracle DB Exporter " + Version + "</title></head><body><h1>Oracle DB Exporter " + Version + "</h1><p><a href='" + *metricPath + "'>Metrics</a></p></body></html>"))
+		w.Write([]byte(`<html>
+			<head><title>Oracle Database Exporter ` + Version + `</title></head>
+			<body>
+			<h1>Oracle Database Exporter ` + Version + `</h1>
+			<p><a href="` + *metricsPath + `">Metrics</a></p>
+			</body>
+			</html>`))
 	})
-	log.Infoln("Listening on", *listenAddress)
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	})
+
+	level.Info(logger).Log("msg", "Listening on", "address", *listenAddress)
+
+	server := &http.Server{Addr: *listenAddress}
+	if err := web.ListenAndServe(server, *configFile, logger); err != nil {
+		level.Error(logger).Log("err", err)
+		os.Exit(1)
+	}
 }
