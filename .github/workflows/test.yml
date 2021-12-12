@@ -10,15 +10,15 @@ jobs:
       image: shinhwagk/oraclepython
     services:
       oracle11g:
-        image: wnameless/oracle-xe-11g-r2
+        image: gvenzl/oracle-xe:latest
         env:
-          ORACLE_ALLOW_REMOTE: true
+          ORACLE_PASSWORD: ORACLE_PASSWORD
         ports:
-          - 1521:1521
+          - 49161:1521
     steps:
       - name: Check out the repo
         run: |
-          cat /etc/redhat* && sqlplus system/oracle@oracle11g:${{ job.services.oracle11g.ports[1521] }}:xe <<EOF
+          cat /etc/redhat* && sqlplus system/ORACLE_PASSWORD@oracle11g:${{ job.services.oracle11g.ports[49161] }}/XEPDB1 <<EOF
           select * from dual;
           exit
           EOF
