@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Check out the repo
         run: |
-          cat /etc/redhat* && sqlplus system/oracle@oracle11g:${{ job.services.oracle11g.ports[27017] }}:xe <<EOF
+          cat /etc/redhat* && sqlplus system/oracle@oracle11g:${{ job.services.oracle11g.ports[1521] }}:xe <<EOF
           select * from dual;
           exit
           EOF
