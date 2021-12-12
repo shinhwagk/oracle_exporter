@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 1m
+  scrape_timeout: 1m
+  evaluation_interval: 1m
+scrape_configs:
+- job_name: oracle-session
+  params:
+    collect[]:
+    - session
+  scrape_interval: 5s
+  scrape_timeout: 5s
+  relabel_configs:
+  - source_labels: [__meta_consul_service_metadata_db_id]
+    target_label: __param_db_id
+  - source_labels: [__meta_consul_service]
+    regex: consul
+    action: drop
+  - regex: __meta_consul_service_metadata_(.+)
+    action: labelmap
+  - regex: job
+    action: labeldrop
+  consul_sd_configs:
+  - server: consul:8500
+    services:
+    - oracle_nodes

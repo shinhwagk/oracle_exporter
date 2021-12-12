@@ -24,13 +24,8 @@ import (
 )
 
 var (
-	// Version will be set at build time.
-	Version = "0.0.0.dev"
-	// listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry. (env: LISTEN_ADDRESS)").Default(getEnv("LISTEN_ADDRESS", ":9161")).String()
-	// metricPath        = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics. (env: TELEMETRY_PATH)").Default(getEnv("TELEMETRY_PATH", "/metrics")).String()
-	fileMetrics = kingpin.Flag("file.metrics", "File with default metrics in a yaml file. (env: FILE_METRICS)").Default(getEnv("FILE_METRICS", "default-metrics.toml")).String()
 	// queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	multidatabaseAddr = kingpin.Flag("query.addr", "multidatabase addr").Default(getEnv("MULTIDATABASE_ADDR", "")).String()
+	multidatabaseAddr = kingpin.Flag("query.addr", "multidatabase addr").Default("").String()
 )
 
 // Metric name parts.
@@ -40,8 +35,6 @@ const (
 )
 
 type handler struct {
-	// exporterMetricsRegistry is a separate registry for the metrics about
-	// the exporter itself.
 	exporterMetricsRegistry *prometheus.Registry
 	includeExporterMetrics  bool
 	maxRequests             int
@@ -81,14 +74,6 @@ type Exporter struct {
 	totalScrapes    prometheus.Counter
 	scrapeErrors    *prometheus.CounterVec
 	up              prometheus.Gauge
-}
-
-// getEnv returns the value of an environment variable, or returns the provided fallback value
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
@@ -234,18 +219,6 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-// func checkMetricFileChanged(content []byte) (bool, string) {
-// 	newShasum := sha256sum(content)
-// 	isChange := newShasum == metricFileShasum
-// 	return !isChange, newShasum
-// }
-
-// func sha256sum(content []byte) string {
-// 	h := sha256.New()
-// 	h.Write(content)
-// 	return string(h.Sum(nil))
-// }
-
 func resolveMetrics(metricsPath string, logger log.Logger) error {
 	var metricsBytes []byte
 	var err error
@@ -374,6 +347,10 @@ func main() {
 			"web.config",
 			"[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.",
 		).Default("").String()
+		fileMetrics = kingpin.Flag(
+			"file.metrics",
+			"File with default metrics in a yaml file. (env: FILE_METRICS)",
+		).Default("").String()
 	)
 
 	promlogConfig := &promlog.Config{}
@@ -387,7 +364,7 @@ func main() {
 	level.Info(logger).Log("msg", "Starting oracledb_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
 
-	if err := resolveMetrics(*metricsPath, logger); err != nil {
+	if err := resolveMetrics(*fileMetrics, logger); err != nil {
 		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}
@@ -396,9 +373,9 @@ func main() {
 	// http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
-			<head><title>Oracle Database Exporter ` + Version + `</title></head>
+			<head><title>Oracle Database Exporter ` + version.Version + `</title></head>
 			<body>
-			<h1>Oracle Database Exporter ` + Version + `</h1>
+			<h1>Oracle Database Exporter ` + version.Version + `</h1>
 			<p><a href="` + *metricsPath + `">Metrics</a></p>
 			</body>
 			</html>`))
