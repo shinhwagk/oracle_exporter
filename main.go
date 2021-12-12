@@ -80,7 +80,7 @@ type Exporter struct {
 func NewExporter(collects []string, dbid string, logger log.Logger) *Exporter {
 	return &Exporter{
 		logger:   logger,
-		md:       MultiDatabase{Addr: *multidatabaseAddr, DbId: dbid, logger: logger},
+		md:       MultiDatabase{Addr: *multidatabaseAddr, DbId: dbid},
 		collects: collects,
 		mp:       MetricProcessor{logger: logger},
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{

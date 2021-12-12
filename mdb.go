@@ -6,14 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/go-kit/log"
 )
 
 type MultiDatabase struct {
-	Addr   string
-	DbId   string
-	logger log.Logger
+	Addr string
+	DbId string
 }
 
 type MultiDatabaseRequest struct {
@@ -54,8 +51,10 @@ func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
-	var mdr MultiDatabaseResult
 	defer resp.Body.Close()
+
+	var mdr MultiDatabaseResult
+
 	json.NewDecoder(resp.Body).Decode(&mdr)
 
 	if mdr.Code == 1 {
