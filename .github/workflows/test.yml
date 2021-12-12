@@ -18,6 +18,7 @@ jobs:
     steps:
       - name: Check out the repo
         run: |
+          sleep 60
           cat /etc/redhat* && sqlplus system/ORACLE_PASSWORD@oracle11g:${{ job.services.oracle11g.ports[49161] }}/XEPDB1 <<EOF
           select * from dual;
           exit
