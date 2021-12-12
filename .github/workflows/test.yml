@@ -17,4 +17,4 @@ jobs:
           - 6379:1521
     steps:
       - name: Check out the repo
-        run: sqlplus system/oracle@oracle11g
+        run: cat /etc/redhat*
