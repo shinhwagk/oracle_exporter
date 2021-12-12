@@ -7,7 +7,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     container:
-      image:  docker pull sflyr/sqlplus
+      image: sflyr/sqlplus
     services:
       oracle11g:
         image: wnameless/oracle-xe-11g-r2
