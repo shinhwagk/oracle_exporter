@@ -1,0 +1,18 @@
+name: test
+
+on: push
+      
+jobs:
+  test:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    services:
+      oracle11g:
+        image: wnameless/oracle-xe-11g-r2
+        env:
+          ORACLE_ALLOW_REMOTE: true
+        ports:
+          - 6379:1521
+    steps:
+      - name: Check out the repo
+        run: echo a
