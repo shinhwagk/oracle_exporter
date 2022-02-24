@@ -77,10 +77,10 @@ type Exporter struct {
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
-func NewExporter(collects []string, dbid string, logger log.Logger) *Exporter {
+func NewExporter(collects []string, dsn string, logger log.Logger) *Exporter {
 	return &Exporter{
 		logger:   logger,
-		md:       MultiDatabase{Addr: *multidatabaseAddr, DbId: dbid},
+		md:       MultiDatabase{Addr: *multidatabaseAddr, Dsn: dsn},
 		collects: collects,
 		mp:       MetricProcessor{logger: logger},
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
@@ -277,10 +277,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	collects := r.URL.Query()["collect[]"]
 	level.Debug(h.logger).Log("msg", "collect query:", "collects", collects)
 
-	params_dbid := r.URL.Query()["dbid"]
+	params_dsn := r.URL.Query()["dsn"]
 
-	level.Debug(h.logger).Log("msg", "dbid query:", "collects", params_dbid)
-	if len(params_dbid) != 1 || len(collects) == 0 {
+	level.Debug(h.logger).Log("msg", "dbid query:", "collects", params_dsn)
+	if len(params_dsn) != 1 || len(collects) == 0 {
 		// level.Warn(h.logger).Log("msg", "Couldn't create filtered metrics handler:", "err", err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(fmt.Sprintf("Couldn't create filtered metrics handler: %s", "err")))
@@ -288,7 +288,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// To serve filtered metrics, we create a filtering handler on the fly.
-	filteredHandler, err := h.innerHandler(params_dbid[0], collects)
+	filteredHandler, err := h.innerHandler(params_dsn[0], collects)
 	if err != nil {
 		level.Warn(h.logger).Log("msg", "Couldn't create filtered metrics handler:", "err", err)
 		w.WriteHeader(http.StatusBadRequest)

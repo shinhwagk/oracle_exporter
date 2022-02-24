@@ -6,22 +6,26 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 )
+
+var userpass = os.Getenv("EXPORTER_USERPASS") // user:pass
 
 type MultiDatabase struct {
 	Addr string
-	DbId string
+	Dsn  string
 }
 
 type MultiDatabaseRequest struct {
-	DbId    string        `json:"db_id"`
-	SqlText string        `json:"sql_text"`
-	Binds   []interface{} `json:"binds"`
+	UserPass string        `json:"userpass"`
+	Dsn      string        `json:"dsn"`
+	SqlText  string        `json:"sql_text"`
+	Binds    []interface{} `json:"binds"`
 }
 
 type MultiDatabaseResult struct {
 	Code   int                      `json:"code"`
-	DbId   string                   `json:"db_id"`
+	Dsn    string                   `json:"dsn"`
 	Error  string                   `json:"error"`
 	Result []map[string]interface{} `json:"result"`
 }
@@ -32,7 +36,7 @@ func (md MultiDatabase) Ping() error {
 }
 
 func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) {
-	json_data, err := json.Marshal(MultiDatabaseRequest{md.DbId, sqlText, []interface{}{}})
+	json_data, err := json.Marshal(MultiDatabaseRequest{userpass, md.Dsn, sqlText, []interface{}{}})
 
 	if err != nil {
 		return nil, err
@@ -42,7 +46,7 @@ func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) 
 	// resp, err := http.Post(url, "application/json",
 	// 	bytes.NewBuffer(json_data))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json_data))
-	req.Header.Set("x-multidatabase-dbid", md.DbId)
+
 	if err != nil {
 		return nil, err
 	}
