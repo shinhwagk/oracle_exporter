@@ -25,7 +25,7 @@ import (
 
 var (
 	// queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	multidatabaseAddr = kingpin.Flag("query.addr", "multidatabase addr").Default("").String()
+	multidatabaseAddr = kingpin.Flag("mdb.addr", "multidatabase addr").Default("").String()
 )
 
 // Metric name parts.
@@ -298,10 +298,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	filteredHandler.ServeHTTP(w, r)
 }
 
-func (h *handler) innerHandler(dbid string, collects []string) (http.Handler, error) {
+func (h *handler) innerHandler(dsn string, collects []string) (http.Handler, error) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(version.NewCollector("oracle_exporter"))
-	exporter := NewExporter(collects, dbid, h.logger)
+	exporter := NewExporter(collects, dsn, h.logger)
 	if err := r.Register(exporter); err != nil {
 		return nil, fmt.Errorf("couldn't register node collector: %s", err)
 	}
