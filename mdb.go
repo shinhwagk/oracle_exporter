@@ -6,10 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 )
-
-var userpass = os.Getenv("EXPORTER_USERPASS") // user:pass
 
 type MultiDatabase struct {
 	Addr string
@@ -17,10 +14,9 @@ type MultiDatabase struct {
 }
 
 type MultiDatabaseRequest struct {
-	UserPass string        `json:"userpass"`
-	Dsn      string        `json:"dsn"`
-	SqlText  string        `json:"sql_text"`
-	Binds    []interface{} `json:"binds"`
+	Dsn     string        `json:"dsn"`
+	SqlText string        `json:"sql_text"`
+	Binds   []interface{} `json:"binds"`
 }
 
 type MultiDatabaseResult struct {
@@ -36,7 +32,7 @@ func (md MultiDatabase) Ping() error {
 }
 
 func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) {
-	json_data, err := json.Marshal(MultiDatabaseRequest{userpass, md.Dsn, sqlText, []interface{}{}})
+	json_data, err := json.Marshal(MultiDatabaseRequest{md.Dsn, sqlText, []interface{}{}})
 
 	if err != nil {
 		return nil, err
