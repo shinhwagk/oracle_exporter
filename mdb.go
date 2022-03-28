@@ -9,8 +9,8 @@ import (
 )
 
 type MultiDatabase struct {
-	Addr string
-	Dsn  string
+	addr string
+	dsn  string
 }
 
 type MultiDatabaseRequest struct {
@@ -32,13 +32,13 @@ func (md MultiDatabase) Ping() error {
 }
 
 func (md MultiDatabase) Query(sqlText string) ([]map[string]interface{}, error) {
-	json_data, err := json.Marshal(MultiDatabaseRequest{md.Dsn, sqlText, []interface{}{}})
+	json_data, err := json.Marshal(MultiDatabaseRequest{md.dsn, sqlText, []interface{}{}})
 
 	if err != nil {
 		return nil, err
 	}
 
-	url := fmt.Sprintf("http://%s/query", md.Addr)
+	url := fmt.Sprintf("http://%s/query", md.addr)
 	// resp, err := http.Post(url, "application/json",
 	// 	bytes.NewBuffer(json_data))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json_data))

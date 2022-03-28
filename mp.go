@@ -150,6 +150,7 @@ func (mp MetricProcessor) GeneratePrometheusMetrics(parse func(row map[string]st
 	// }
 
 	if err != nil {
+		level.Error(mp.logger).Log("Error for oracle query: ", md.dsn, err)
 		return err
 	}
 
