@@ -160,6 +160,9 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		if !filterMetric(e.collects, metric.Name) {
 			continue
 		}
+
+		level.Info(e.logger).Log("dsn", e.md.dsn, "metric", metric.Name, "metric context", metric.Context)
+
 		wg.Add(1)
 		metric := metric //https://golang.org/doc/faq#closures_and_goroutines
 
