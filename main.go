@@ -108,18 +108,10 @@ func NewExporter(collects []string, dsn string, logger log.Logger) *Exporter {
 
 // Collect implements prometheus.Collector.
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	metricCh := make(chan prometheus.Metric)
-	doneCh := make(chan struct{})
-
-	go func() {
-		for m := range metricCh {
-			ch <- m.Desc()
-		}
-		close(doneCh)
-	}()
-	e.Collect(metricCh)
-	close(metricCh)
-	<-doneCh
+	ch <- e.TotalScrapes.Desc()
+	ch <- e.Error.Desc()
+	e.ScrapeErrors.Describe(ch)
+	ch <- e.OracleUp.Desc()
 }
 
 // Collect implements prometheus.Collector.
@@ -145,7 +137,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 
 	if err = e.md.Ping(); err != nil {
 		e.OracleUp.Set(0)
-		level.Error(e.logger).Log("Error pinging oracle:", err)
+		level.Error(e.logger).Log("Error pinging oracle", err)
 		return
 	} else {
 		e.OracleUp.Set(1)
@@ -299,7 +291,6 @@ func main() {
 	promlogConfig := &promlog.Config{}
 	flag.AddFlags(kingpin.CommandLine, promlogConfig)
 	kingpin.Version(version.Print("oracle_exporter"))
-	kingpin.CommandLine.UsageWriter(os.Stdout)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 	logger := promlog.New(promlogConfig)
