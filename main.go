@@ -139,14 +139,14 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		e.OracleUp.Set(0)
 		level.Error(e.logger).Log("Error pinging oracle", err)
 		return
-	} else {
-		e.OracleUp.Set(1)
-		level.Debug(e.logger).Log("msg", "Successfully pinged Oracle database: ")
 	}
+
+	e.OracleUp.Set(1)
 
 	// resolveMetricFile()
 
 	wg := sync.WaitGroup{}
+	defer wg.Wait()
 
 	for _, metric := range metricsToScrap.Metric {
 		if !filterMetric(e.collects, metric.Name) {
@@ -201,7 +201,6 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			}
 		}()
 	}
-	wg.Wait()
 }
 
 func resolveMetrics(metricsPath string, logger log.Logger) error {
