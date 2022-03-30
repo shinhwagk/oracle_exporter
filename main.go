@@ -153,7 +153,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			continue
 		}
 
-		level.Info(e.logger).Log("dsn", e.md.dsn, "metric", metric.Name, "metric context", metric.Context)
+		level.Debug(e.logger).Log("msg", "scrap detail", "dsn", e.md.dsn, "metric", metric.Name, "metric context", metric.Context)
 
 		wg.Add(1)
 		metric := metric //https://golang.org/doc/faq#closures_and_goroutines
@@ -194,7 +194,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 
 			scrapeStart := time.Now()
 			if err = e.mp.ScrapeMetric(ch, e.md, metric); err != nil {
-				level.Error(e.logger).Log("Error scraping for", metric.Name, "_", metric.Context, ":", err)
+				level.Error(e.logger).Log("msg", "Error Scrape", "dsn", e.md.dsn, "metric", metric.Name, "context", metric.Context, "err", err)
 				e.ScrapeErrors.WithLabelValues(metric.Context).Inc()
 			} else {
 				level.Debug(e.logger).Log("Successfully scraped metric: ", metric.Context, metric.MetricsDesc, time.Since(scrapeStart))
