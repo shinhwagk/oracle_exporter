@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+
+  mdb:
+    image: shinhwagk/multidatabase:v0.2.10
+    restart: unless-stopped
+    environment:
+      ORACLE_USERPASS: system:oracle1171

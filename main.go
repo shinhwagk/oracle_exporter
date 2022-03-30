@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
-	stdlog "log"
 	"net/http"
 	"os"
 	"strings"
@@ -13,13 +11,13 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -33,13 +31,6 @@ const (
 	namespace = "oracle"
 	exporter  = "exporter"
 )
-
-type handler struct {
-	exporterMetricsRegistry *prometheus.Registry
-	includeExporterMetrics  bool
-	maxRequests             int
-	logger                  log.Logger
-}
 
 // global variables
 var (
@@ -70,10 +61,10 @@ type Exporter struct {
 	md              MultiDatabase
 	mp              MetricProcessor
 	collects        []string
-	duration, error prometheus.Gauge
-	totalScrapes    prometheus.Counter
-	scrapeErrors    *prometheus.CounterVec
-	up              prometheus.Gauge
+	Duration, Error prometheus.Gauge
+	TotalScrapes    prometheus.Counter
+	ScrapeErrors    *prometheus.CounterVec
+	OracleUp        prometheus.Gauge
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
@@ -83,31 +74,31 @@ func NewExporter(collects []string, dsn string, logger log.Logger) *Exporter {
 		md:       MultiDatabase{addr: *multidatabaseAddr, dsn: dsn},
 		collects: collects,
 		mp:       MetricProcessor{logger: logger},
-		duration: prometheus.NewGauge(prometheus.GaugeOpts{
+		Duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: exporter,
 			Name:      "last_scrape_duration_seconds",
 			Help:      "Duration of the last scrape of metrics from Oracle DB.",
 		}),
-		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
+		TotalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: exporter,
 			Name:      "scrapes_total",
 			Help:      "Total number of times Oracle DB was scraped for metrics.",
 		}),
-		scrapeErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
+		ScrapeErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: exporter,
 			Name:      "scrape_errors_total",
 			Help:      "Total number of times an error occured scraping a Oracle database.",
 		}, []string{"collector"}),
-		error: prometheus.NewGauge(prometheus.GaugeOpts{
+		Error: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: exporter,
 			Name:      "last_scrape_error",
 			Help:      "Whether the last scrape of metrics from Oracle DB resulted in an error (1 for error, 0 for success).",
 		}),
-		up: prometheus.NewGauge(prometheus.GaugeOpts{
+		OracleUp: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "up",
 			Help:      "Whether the Oracle database server is up.",
@@ -134,31 +125,30 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 // Collect implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.scrape(ch)
-	ch <- e.duration
-	ch <- e.totalScrapes
-	ch <- e.error
-	e.scrapeErrors.Collect(ch)
-	ch <- e.up
+	ch <- e.TotalScrapes
+	ch <- e.Error
+	e.ScrapeErrors.Collect(ch)
+	ch <- e.OracleUp
 }
 
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
-	e.totalScrapes.Inc()
+	e.TotalScrapes.Inc()
 	var err error
 	defer func(begun time.Time) {
-		e.duration.Set(time.Since(begun).Seconds())
+		e.Duration.Set(time.Since(begun).Seconds())
 		if err == nil {
-			e.error.Set(0)
+			e.Error.Set(0)
 		} else {
-			e.error.Set(1)
+			e.Error.Set(1)
 		}
 	}(time.Now())
 
 	if err = e.md.Ping(); err != nil {
-		e.up.Set(0)
+		e.OracleUp.Set(0)
 		level.Error(e.logger).Log("Error pinging oracle:", err)
 		return
 	} else {
-		e.up.Set(1)
+		e.OracleUp.Set(1)
 		level.Debug(e.logger).Log("msg", "Successfully pinged Oracle database: ")
 	}
 
@@ -210,7 +200,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 			scrapeStart := time.Now()
 			if err = e.mp.ScrapeMetric(ch, e.md, metric); err != nil {
 				level.Error(e.logger).Log("Error scraping for", metric.Name, "_", metric.Context, ":", err)
-				e.scrapeErrors.WithLabelValues(metric.Context).Inc()
+				e.ScrapeErrors.WithLabelValues(metric.Context).Inc()
 			} else {
 				level.Debug(e.logger).Log("Successfully scraped metric: ", metric.Context, metric.MetricsDesc, time.Since(scrapeStart))
 			}
@@ -257,97 +247,47 @@ func filterMetric(slice []string, val string) bool {
 	return false
 }
 
-func newHandler(includeExporterMetrics bool, maxRequests int, logger log.Logger) *handler {
-	h := &handler{
-		exporterMetricsRegistry: prometheus.NewRegistry(),
-		includeExporterMetrics:  includeExporterMetrics,
-		maxRequests:             maxRequests,
-		logger:                  logger,
-	}
-	if h.includeExporterMetrics {
-		h.exporterMetricsRegistry.MustRegister(
-			promcollectors.NewProcessCollector(promcollectors.ProcessCollectorOpts{}),
-			promcollectors.NewGoCollector(),
-		)
-	}
-	return h
+func init() {
+	prometheus.MustRegister(version.NewCollector("oracle_exporter"))
 }
 
-func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	collects := r.URL.Query()["collect[]"]
-	level.Debug(h.logger).Log("msg", "collect query:", "collects", collects)
+func newHandler(logger log.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		param_collects := r.URL.Query()["collect[]"]
+		param_dsn := r.URL.Query()["dsn"]
 
-	params_dsn := r.URL.Query()["dsn"]
+		if len(param_dsn) != 1 || len(param_collects) == 0 {
+			// level.Warn(h.logger).Log("msg", "Couldn't create filtered metrics handler:", "err", err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Parameters are not set correctly."))
+			return
+		}
 
-	level.Debug(h.logger).Log("msg", "dbid query:", "collects", params_dsn)
-	if len(params_dsn) != 1 || len(collects) == 0 {
-		// level.Warn(h.logger).Log("msg", "Couldn't create filtered metrics handler:", "err", err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("Couldn't create filtered metrics handler: %s", "err")))
-		return
+		registry := prometheus.NewRegistry()
+		registry.MustRegister(NewExporter(param_collects, param_dsn[0], logger))
+
+		gatherers := prometheus.Gatherers{
+			prometheus.DefaultGatherer,
+			registry,
+		}
+
+		handler := promhttp.HandlerFor(gatherers, promhttp.HandlerOpts{})
+		handler.ServeHTTP(w, r)
 	}
-
-	// To serve filtered metrics, we create a filtering handler on the fly.
-	filteredHandler, err := h.innerHandler(params_dsn[0], collects)
-	if err != nil {
-		level.Warn(h.logger).Log("msg", "Couldn't create filtered metrics handler:", "err", err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("Couldn't create filtered metrics handler: %s", err)))
-		return
-	}
-	filteredHandler.ServeHTTP(w, r)
-}
-
-func (h *handler) innerHandler(dsn string, collects []string) (http.Handler, error) {
-	r := prometheus.NewRegistry()
-	r.MustRegister(version.NewCollector("oracle_exporter"))
-	exporter := NewExporter(collects, dsn, h.logger)
-	if err := r.Register(exporter); err != nil {
-		return nil, fmt.Errorf("couldn't register node collector: %s", err)
-	}
-
-	handler := promhttp.HandlerFor(
-		prometheus.Gatherers{h.exporterMetricsRegistry, r},
-		promhttp.HandlerOpts{
-			ErrorLog:            stdlog.New(log.NewStdlibAdapter(level.Error(h.logger)), "", 0),
-			ErrorHandling:       promhttp.ContinueOnError,
-			MaxRequestsInFlight: h.maxRequests,
-			Registry:            h.exporterMetricsRegistry,
-		},
-	)
-	if h.includeExporterMetrics {
-		// Note that we have to use h.exporterMetricsRegistry here to
-		// use the same promhttp metrics for all expositions.
-		handler = promhttp.InstrumentMetricHandler(
-			h.exporterMetricsRegistry, handler,
-		)
-	}
-	return handler, nil
 }
 
 func main() {
 	var (
+		webConfig     = webflag.AddFlags(kingpin.CommandLine)
 		listenAddress = kingpin.Flag(
 			"web.listen-address",
 			"Address on which to expose metrics and web interface.",
 		).Default(":9521").String()
-		metricsPath = kingpin.Flag(
+		metricPath = kingpin.Flag(
 			"web.telemetry-path",
 			"Path under which to expose metrics.",
 		).Default("/metrics").String()
-		disableExporterMetrics = kingpin.Flag(
-			"web.disable-exporter-metrics",
-			"Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).",
-		).Bool()
-		maxRequests = kingpin.Flag(
-			"web.max-requests",
-			"Maximum number of parallel scrape requests. Use 0 to disable.",
-		).Default("40").Int()
-		configFile = kingpin.Flag(
-			"web.config",
-			"[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.",
-		).Default("").String()
-		fileMetrics = kingpin.Flag(
+		metricFile = kingpin.Flag(
 			"file.metrics",
 			"File with default metrics in a yaml file. (env: FILE_METRICS)",
 		).Default("").String()
@@ -364,19 +304,20 @@ func main() {
 	level.Info(logger).Log("msg", "Starting oracledb_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
 
-	if err := resolveMetrics(*fileMetrics, logger); err != nil {
+	if err := resolveMetrics(*metricFile, logger); err != nil {
 		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}
 
-	http.Handle(*metricsPath, newHandler(!*disableExporterMetrics, *maxRequests, logger))
-	// http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
+	// http.Handle(*metricsPath, newHandler(*maxRequests, logger))
+	handlerFunc := newHandler(logger)
+	http.Handle(*metricPath, promhttp.InstrumentMetricHandler(prometheus.DefaultRegisterer, handlerFunc))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>Oracle Database Exporter ` + version.Version + `</title></head>
 			<body>
 			<h1>Oracle Database Exporter ` + version.Version + `</h1>
-			<p><a href="` + *metricsPath + `">Metrics</a></p>
+			<p><a href="` + *metricPath + `">Metrics</a></p>
 			</body>
 			</html>`))
 	})
@@ -387,7 +328,7 @@ func main() {
 	level.Info(logger).Log("msg", "Listening on", "address", *listenAddress)
 
 	server := &http.Server{Addr: *listenAddress}
-	if err := web.ListenAndServe(server, *configFile, logger); err != nil {
+	if err := web.ListenAndServe(server, *webConfig, logger); err != nil {
 		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}

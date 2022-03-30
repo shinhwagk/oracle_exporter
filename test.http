@@ -1,1 +1,1 @@
-GET http://127.0.0.1:9161/metrics?collect[]=session HTTP/1.1
+GET http://127.0.0.1:9521/metrics?collect[]=session&dsn=10.65.193.14:1521/func1 HTTP/1.1
