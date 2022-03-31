@@ -28,8 +28,6 @@ jobs:
       - run: curl http://mdb:5000/check
       - run: |
           go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml &
-          
-          exit 1
       - run: |
           for i in `seq 1 20`; do
             [[ "$(curl -s -o /dev/null -w ''%{http_code}'' 127.0.0.1:9521/check)" != "200" ]] && \
