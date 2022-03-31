@@ -6,8 +6,8 @@ jobs:
   test:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
-    container:
-      image: shinhwagk/oraclepython
+    # container:
+    #   image: shinhwagk/oraclepython
     services:
       oracle11g:
         image: gvenzl/oracle-xe:latest
