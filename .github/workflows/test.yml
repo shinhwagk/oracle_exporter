@@ -27,7 +27,7 @@ jobs:
         with:
           go-version: '1.18.0'
       - run: |
-          go run main.go mdb.go mp.go --mdb.addr=mdb:${{ job.services.mdb.ports[49162] }} --file.metrics https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yml
+          go run main.go mdb.go mp.go --mdb.addr=mdb:49162 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml
       - name: Check out the repo
         run: |
           sleep 60
