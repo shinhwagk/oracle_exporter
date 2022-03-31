@@ -26,10 +26,13 @@ jobs:
         with:
           go-version: "1.18.0"
       - run: curl http://mdb:5000/check
-      - run: go mod download -x; go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml 2>&1 1>oracle_exporter.log &
+      - run: |
+          go mod download -x
+          go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml 2>&1 1>oracle_exporter.log &
       - run: |
           for i in `seq 1 100`; do
             cat oracle_exporter.log
+            curl -s -o /dev/null -w '%{http_code}' 127.0.0.1:9521/check
             [ "$(curl -s -o /dev/null -w '%{http_code}' 127.0.0.1:9521/check)" -ge "200" ] && \
             curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1' && \
             exit 0
