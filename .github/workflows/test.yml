@@ -32,6 +32,7 @@ jobs:
             [[ "$(curl -s -o /dev/null -w ''%{http_code}'' 127.0.0.1:9521/check)" != "200" ]] && \
             curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1' && \
             exit 0
+            sleep 1
           done
           exit 1
           
