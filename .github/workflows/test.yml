@@ -30,9 +30,10 @@ jobs:
           go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml &
           sleep 30
       - run: curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1'
-  push_to_registry:
+  push:
     name: Push Docker image to Docker Hub
     if: ${{ success() }}
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
