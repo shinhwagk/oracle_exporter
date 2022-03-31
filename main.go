@@ -22,8 +22,24 @@ import (
 )
 
 var (
+	webConfig = webflag.AddFlags(kingpin.CommandLine)
 	// queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	multidatabaseAddr = kingpin.Flag("mdb.addr", "multidatabase addr").Default("").String()
+	listenAddress = kingpin.Flag(
+		"web.listen-address",
+		"Address on which to expose metrics and web interface.",
+	).Default(":9521").String()
+	metricPath = kingpin.Flag(
+		"web.telemetry-path",
+		"Path under which to expose metrics.",
+	).Default("/metrics").String()
+	metricFile = kingpin.Flag(
+		"file.metrics",
+		"File with default metrics in a yaml file. (env: FILE_METRICS)",
+	).Default("").String()
+	multidatabaseAddr = kingpin.Flag(
+		"mdb.addr",
+		"multidatabase address",
+	).Default("").String()
 )
 
 // Metric name parts.
@@ -68,7 +84,7 @@ type Exporter struct {
 }
 
 // NewExporter returns a new Oracle DB exporter for the provided DSN.
-func NewExporter(collects []string, dsn string, logger log.Logger) *Exporter {
+func NewExporter(dsn string, collects []string, logger log.Logger) *Exporter {
 	return &Exporter{
 		logger:   logger,
 		md:       MultiDatabase{addr: *multidatabaseAddr, dsn: dsn},
@@ -117,6 +133,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 // Collect implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.scrape(ch)
+
 	ch <- e.TotalScrapes
 	ch <- e.Error
 	e.ScrapeErrors.Collect(ch)
@@ -126,13 +143,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	e.TotalScrapes.Inc()
 	var err error
+
 	defer func(begun time.Time) {
 		e.Duration.Set(time.Since(begun).Seconds())
 		if err == nil {
 			e.Error.Set(0)
-		} else {
-			e.Error.Set(1)
+			return
 		}
+		e.Error.Set(1)
 	}(time.Now())
 
 	if err = e.md.Ping(); err != nil {
@@ -142,6 +160,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	}
 
 	e.OracleUp.Set(1)
+	e.Error.Set(1)
 
 	// resolveMetricFile()
 
@@ -258,7 +277,7 @@ func newHandler(logger log.Logger) http.HandlerFunc {
 		}
 
 		registry := prometheus.NewRegistry()
-		registry.MustRegister(NewExporter(param_collects, param_dsn[0], logger))
+		registry.MustRegister(NewExporter(param_dsn[0], param_collects, logger))
 
 		gatherers := prometheus.Gatherers{
 			prometheus.DefaultGatherer,
@@ -271,21 +290,6 @@ func newHandler(logger log.Logger) http.HandlerFunc {
 }
 
 func main() {
-	var (
-		webConfig     = webflag.AddFlags(kingpin.CommandLine)
-		listenAddress = kingpin.Flag(
-			"web.listen-address",
-			"Address on which to expose metrics and web interface.",
-		).Default(":9521").String()
-		metricPath = kingpin.Flag(
-			"web.telemetry-path",
-			"Path under which to expose metrics.",
-		).Default("/metrics").String()
-		metricFile = kingpin.Flag(
-			"file.metrics",
-			"File with default metrics in a yaml file. (env: FILE_METRICS)",
-		).Default("").String()
-	)
 
 	promlogConfig := &promlog.Config{}
 	flag.AddFlags(kingpin.CommandLine, promlogConfig)
