@@ -8,3 +8,4 @@
     time_model: counter
   request: |
     SELECT stat_name name, value time_model FROM v$sys_time_model
+    
