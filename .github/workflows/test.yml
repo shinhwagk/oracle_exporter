@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: "1.18.0"
-      - run: curl http://mdb:5000/check
+      - run: curl -s -o /dev/null -w '%{http_code}' http://mdb:5000/check
       - run: |
           go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml &
           for i in `seq 1 100`; do
