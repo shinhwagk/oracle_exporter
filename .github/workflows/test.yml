@@ -15,13 +15,13 @@ jobs:
         env:
           ORACLE_PASSWORD: ORACLE_PASSWORD
         ports:
-          - 49161:1521
+          - 1521:1521
       mdb:
         image: shinhwagk/multidatabase
         env:
           ORACLE_USERPASS: system:ORACLE_PASSWORD
         ports:
-          - 49162:1521
+          - 49162:5000
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -31,4 +31,4 @@ jobs:
           curl http://mdb:49162/check
           go run main.go mdb.go mp.go --mdb.addr=mdb:49162 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml &
           sleep 30
-          curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:49161/XEPDB1' | grep 'oracle_up 1'
+          curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1'
