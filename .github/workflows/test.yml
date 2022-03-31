@@ -18,7 +18,7 @@ jobs:
       mdb:
         image: shinhwagk/multidatabase
         env:
-          USERPASS: system:ORACLE_PASSWORD
+          ORACLE_USERPASS: system:ORACLE_PASSWORD
         ports:
           - 49162:1521
     steps:
