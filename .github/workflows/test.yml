@@ -28,11 +28,16 @@ jobs:
       - run: curl http://mdb:5000/check
       - run: |
           go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml &
+          
+          exit 1
+      - run: |
           for i in `seq 1 20`; do
-            [[ "$(curl -s -o /dev/null -w ''%{http_code}'' 127.0.0.1:9521/check)" != "200" ]] && exit 0
+            [[ "$(curl -s -o /dev/null -w ''%{http_code}'' 127.0.0.1:9521/check)" != "200" ]] && \
+            curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1' && \
+            exit 0
           done
           exit 1
-      - run: curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1'
+          
   push:
     name: Push image to Docker Hub
     if: ${{ success() }}
