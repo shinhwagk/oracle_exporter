@@ -29,4 +29,4 @@ jobs:
       - run: |
           go run main.go mdb.go mp.go --mdb.addr=mdb:49162 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml &
           sleep 30
-          curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep oracle
+          curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:49161/XEPDB1' | grep oracle
