@@ -15,7 +15,19 @@ jobs:
           ORACLE_PASSWORD: ORACLE_PASSWORD
         ports:
           - 49161:1521
+      mdb:
+        image: shinhwagk/multidatabase
+        env:
+          USERPASS: system:ORACLE_PASSWORD
+        ports:
+          - 49162:1521
     steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18.0'
+      - run: |
+          go run main.go mdb.go mp.go --mdb.addr=mdb:${{ job.services.mdb.ports[49162] }} --file.metrics https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yml
       - name: Check out the repo
         run: |
           sleep 60
