@@ -7,8 +7,6 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     container: node:16
-    # container:
-    #   image: shinhwagk/oraclepython
     services:
       oracle11g:
         image: gvenzl/oracle-xe:latest
@@ -27,8 +25,36 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: "1.18.0"
+      - run: curl http://mdb:5000/check
       - run: |
-          curl http://mdb:5000/check
           go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml &
           sleep 30
-          curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1'
+      - run: curl -g -s 'http://127.0.0.1:9521/metrics?collect[]=system-timemodel&dsn=oracle11g:1521/XEPDB1' | grep 'oracle_up 1'
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Get and Set Version
+        id: version
+        run: |
+          version=`cat VERSION`
+          echo "::set-output name=version::${version}"
+      - name: Create Github Tag
+        run: |
+          git tag ${{ steps.version.outputs.version }}
+          git push --tags
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: |
+            shinhwagk/oracle_exporter:${{ steps.version.outputs.version }}
+            shinhwagk/oracle_exporter:latest
