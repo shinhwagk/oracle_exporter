@@ -30,6 +30,7 @@ jobs:
           go mod download -x
           go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/test.yaml 2>&1 1>oracle_exporter.log &
       - run: |
+          curl -s -o /dev/null -w '%{http_code}' 127.0.0.1:9521/check
           for i in `seq 1 100`; do
             curl -s -o /dev/null -w '%{http_code}' 127.0.0.1:9521/check
             sleep 1
