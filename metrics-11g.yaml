@@ -1,0 +1,394 @@
+- name: datafile
+  context: datafile
+  labels:
+    - tablespace
+    - file_id
+  metricsdesc:
+    alloc_free_bytes: counter
+    alloc_bytes: counter
+    max_bytes: counter
+  metricstype:
+    alloc_free_bytes: counter
+    alloc_bytes: counter
+    max_bytes: counter
+  request: |
+    SELECT ddf.tablespace_name tablespace,
+       ddf.file_id file_id,
+       NVL(dfs.bytes, 0) alloc_free_bytes,
+       ddf.bytes alloc_bytes,
+       ddf.maxbytes max_bytes
+    FROM (SELECT tablespace_name,
+                file_id,
+                DECODE(maxbytes, 0, bytes, maxbytes) maxbytes,
+                bytes bytes
+            FROM dba_data_files) ddf,
+        (SELECT tablespace_name, file_id, SUM(bytes) bytes
+            FROM dba_free_space
+            GROUP BY tablespace_name, file_id) dfs
+    WHERE ddf.tablespace_name = dfs.tablespace_name(+)
+    AND ddf.file_id = dfs.file_id(+)
+- name: dg-lag
+  context: dg_lag
+  labels:
+    - dgtype
+    - name
+  metricsdesc:
+    second: oracle lag
+  request: |
+    SELECT 'physical' dgtype, name,
+    EXTRACT(DAY FROM itval) * 24 * 60 * 60 +
+    EXTRACT(HOUR FROM itval) * 60 * 60 +
+    EXTRACT(MINUTE FROM itval) * 60 +
+    EXTRACT(SECOND FROM itval) second
+    FROM (SELECT ds.name, TO_DSINTERVAL(value) itval
+    FROM v$dataguard_stats ds, v$database d
+    WHERE d.database_role = 'PHYSICAL STANDBY'
+    AND ds.name IN ('apply lag', 'transport lag'))
+    UNION ALL
+    SELECT 'logical' dgtype, 'apply lag' name, (SYSDATE - lp.applied_time) * 24 * 60 * 60 second
+    FROM v$logstdby_progress lp, v$database d
+    WHERE d.database_role = 'LOGICAL STANDBY'
+  ignorezeroresult: true
+- name: dg-mrp
+  context: dg_mrp
+  metricsdesc:
+    running: oracle lag
+  request: |
+    SELECT decode(count(*),0,0,1) running FROM gv$managed_standby WHERE process like 'MRP%'
+  ignorezeroresult: true
+- name: log
+  context: log
+  metricsdesc:
+    sequence: counter
+  metricstype:
+    sequence: counter
+  request: "SELECT sequence# sequence FROM v$log WHERE thread# = (SELECT instance_number FROM v$instance) AND status = 'CURRENT'"
+- name: segment
+  context: segment
+  labels:
+    - owner
+    - name
+    - type
+    - tablespace
+  metricsdesc:
+    bytes: >
+      Generic counter metric of tablespaces
+      bytes in Oracle.
+  request: |
+    SELECT owner, segment_name name, segment_type type, tablespace_name tablespace, sum(bytes) bytes
+    FROM dba_segments
+    WHERE tablespace_name NOT IN ('SYSTEM','SYSAUX') AND tablespace_name NOT LIKE 'UNDOTBS%'
+    GROUP BY owner, segment_name, segment_type, tablespace_name
+- name: session
+  context: session
+  labels:
+    - username
+    - machine
+    - status
+    - event
+  metricsdesc:
+    sample: session descs  
+  request: |
+    SELECT username, machine, status, event, count(*) sample FROM v$session 
+    WHERE username IS NOT NULL AND username NOT IN ('GRAFANAUSER')
+    GROUP by username, machine, status, event
+- name: session-timemodel
+  context: session
+  labels: 
+    - name
+    - username
+    - machine
+  metricsdesc:
+    time_model: counter
+  metricstype:
+    time_model: counter
+  request: |
+    SELECT s.username, s.machine, stm.stat_name name, SUM(stm.value) time_model
+    FROM v$sess_time_model stm, v$session s
+    WHERE stm.sid = s.sid AND s.username IS NOT NULL AND s.username NOT IN ('GRAFANAUSER')
+    GROUP by s.username, s.machine, stm.stat_name
+- name: session-event
+  context: session_event
+  labels:
+    - username
+    - event
+    - class
+    - machine
+  metricsdesc:
+    waits_total: counter
+    waited_time_total: counter
+  metricstype:
+    waits_total: counter
+    waited_time_total: counter
+  request: |
+    SELECT 
+       ss.username,
+       ss.machine,
+       se.wait_class class,
+       se.event event,
+       SUM(se.total_waits) waits_total,
+       SUM(se.time_waited_micro) waited_time_total
+    FROM v$session_event se, v$session ss
+    WHERE ss.sid = se.sid
+      AND se.wait_class <> 'Idle'
+      AND ss.username IS NOT NULL
+      AND ss.username NOT IN ('ORACLE_EXPORTER')
+    GROUP BY ss.username, se.event, se.wait_class, ss.machine
+- name: session-statistic
+  context: session
+  labels:
+    - class
+    - name
+    - username
+    - machine
+    - sid
+  metricsdesc:
+    statistic: counter
+  metricstype:
+    statistic: counter
+  request: |
+    select name, username, machine, class, sum(value) statistic
+    from (SELECT
+                sn.name,
+                s.username,
+                s.machine,
+                decode(sn.class,
+                        1,
+                        'User',
+                        2,
+                        'Read',
+                        4,
+                        'Enqueue',
+                        8,
+                        'Cache',
+                        16,
+                        'OS',
+                        32,
+                        'Real Application Clusters',
+                        64,
+                        'SQL',
+                        128,
+                        'Debug',
+                        'Other') class,
+                ss.value value
+            FROM v$sesstat ss, v$statname sn, v$session s
+          WHERE s.sid = ss.sid
+            AND ss.statistic# = sn.statistic#
+            AND s.username IS NOT NULL
+            AND ss.value >= 1
+            AND s.username NOT IN ('GRAFANAUSER')
+            AND sn.name IN ('parse count (total)',
+                            'parse count (hard)',
+                            'execute count',
+                            'user commits',
+                            'user rollbacks',
+                            'physical read bytes',
+                            'physical read total bytes',
+                            'physical write bytes',
+                            'physical write total bytes',
+                            'redo size',
+                            'leaf node 90-10 splits',
+                            'leaf node splits',
+                            'sorts (disk)'))
+    GROUP BY name, machine, username, class
+- name: system-timemodel
+  context: system
+  labels:
+    - name
+  metricsdesc:
+    time_model: counter
+  metricstype:
+    time_model: counter
+  request: |
+    SELECT stat_name name, value time_model FROM v$sys_time_model
+- name: system-statistic
+  context: system
+  labels:
+    - name
+    - class
+  metricsdesc:
+    statistic: counter
+  metricstype:
+    statistic: counter
+  request: |
+    SELECT decode(class, 1, 'User', 2, 'Read', 4, 'Enqueue', 8, 'Cache', 16, 'OS', 32, 'Real Application Clusters', 64, 'SQL', 128, 'Debug', 33, 'Other-33', 40, 'Other-40', 72, 'Other-72', 192, 'Other-192', 'Other') class,
+    name,
+    value statistic FROM v$sysstat WHERE value >= 1
+- name: tablespace
+  context: tablespace
+  labels:
+    - tablespace
+  metricsdesc:
+    alloc_free_bytes: counter
+    alloc_bytes: counter
+    max_bytes: counter
+  metricstype:
+    alloc_free_bytes: counter
+    alloc_bytes: counter
+    max_bytes: counter
+  request: |
+    SELECT ddf.tablespace_name tablespace, NVL(dfs.bytes, 0) alloc_free_bytes, ddf.bytes alloc_bytes, ddf.maxbytes max_bytes
+      FROM (SELECT tablespace_name, SUM(DECODE(maxbytes, 0, bytes, maxbytes)) maxbytes, SUM(bytes) bytes
+              FROM dba_data_files
+            GROUP BY tablespace_name) ddf,
+          dba_tablespaces dt,
+          (SELECT tablespace_name, SUM(bytes) bytes FROM dba_free_space GROUP BY tablespace_name) dfs
+    WHERE ddf.tablespace_name = dt.tablespace_name AND dt.tablespace_name = dfs.tablespace_name(+)
+- name: sql
+  context: sql
+  labels:
+    - username
+    - sql_id
+    - command
+    - child
+  metricsdesc:
+    cpu_time_total: counter
+    elapsed_time_total: counter
+    buffer_gets_total: counter
+    disk_read_total: counter
+    sort_total: counter
+    executions_total: counter
+    parse_call_total: counter
+    application_wait_total: counter
+    concurrency_wait_total: counter
+    cluster_wait_total: counter
+    user_io_wait_total: counter
+    plsql_exec_total: counter
+    java_exec_total: counter
+    rows_processed_total: counter
+    phy_read_bytes_total: counter
+    phy_read_request_total: counter
+    phy_write_bytes_total: counter
+    phy_write_request_total: counter
+  metricstype:
+    cpu_time_total: counter
+    elapsed_time_total: counter
+    buffer_gets_total: counter
+    disk_read_total: counter
+    sort_total: counter
+    executions_total: counter
+    parse_call_total: counter
+    application_wait_total: counter
+    concurrency_wait_total: counter
+    cluster_wait_total: counter
+    user_io_wait_total: counter
+    plsql_exec_total: counter
+    java_exec_total: counter
+    rows_processed_total: counter
+    phy_read_bytes_total: counter
+    phy_read_request_total: counter
+    phy_write_bytes_total: counter
+    phy_write_request_total: counter
+  request: |
+    SELECT 
+      sql_id,
+      child_number child,
+      (SELECT name FROM audit_actions WHERE s.command_type = action) command,
+      parsing_schema_name username,
+      cpu_time cpu_time_total,
+      elapsed_time elapsed_time_total,
+      buffer_gets buffer_gets_total,
+      disk_reads disk_read_total,
+      sorts sort_total,
+      executions executions_total,
+      physical_read_bytes phy_read_bytes_total,
+      physical_read_requests phy_read_request_total,
+      physical_write_bytes phy_write_bytes_total,
+      physical_write_requests phy_write_request_total,
+      parse_calls parse_call_total,
+      application_wait_time application_wait_total,
+      concurrency_wait_time concurrency_wait_total,
+      cluster_wait_time cluster_wait_total,
+      user_io_wait_time user_io_wait_total,
+      plsql_exec_time plsql_exec_total,
+      java_exec_time java_exec_total,
+      rows_processed rows_processed_total
+    FROM v$sql s
+    WHERE last_active_time >= TRUNC(sysdate, 'MI') - 5 / 60 / 24 AND is_obsolete ='N' AND parsing_schema_name NOT IN ('GRAFANAUSER', 'SYS')
+- name: system-event
+  context: system
+  labels:
+    - event
+    - class
+  metricsdesc:
+    waits_total: counter
+    waited_time_total: counter
+    timeout_total: counter
+  metricstype:
+    waits_total: counter
+    waited_time_total: counter
+    timeout_total: counter
+  request: |
+    SELECT 
+      n.wait_class class,
+      e.event,
+      e.total_waits waits_total,
+      e.time_waited_micro waited_time_total,
+      e.total_timeouts timeout_total
+    FROM v$system_event e, v$event_name n
+    WHERE n.name = e.event
+- name: ash
+  context: ash
+  labels:
+    - sample_id
+    - event
+    - username
+    - sql_id
+    - command
+    - machine
+  metricsdesc:
+    sample: metricDescSample
+  request: |
+    select sample_id,
+       event,
+       username,
+       sql_id,
+       command,
+       machine,
+       sum(sample) sample
+      from (SELECT sample_id,
+                   DECODE(session_state,
+                          'ON CPU',
+                          'Wait for CPU',
+                          'WAITING',
+                          event) event,
+                   (SELECT username FROM dba_users WHERE user_id = ash.user_id) username,
+                   NVL(sql_id, 'null') sql_id,
+                   NVL(sql_opname, 'null') command,
+                   NVL(machine, 'null') machine,
+                   1 sample
+              FROM v$active_session_history ash
+             WHERE sample_time >= TRUNC(sysdate, 'MI') - 1 / 24 / 60
+               AND sample_time < TRUNC(sysdate, 'MI'))
+     group by sample_id, event, username, sql_id, command, machine
+- name: scn
+  context: scn
+  metricsdesc:
+    current_scn: counter
+  metricstype:
+    current_scn: counter
+  request: |
+    SELECT current_scn FROM v$database
+- name: transaction
+  context: transaction
+  labels:
+    - username
+    - machine
+    - event
+  metricsdesc:
+    second: long transaction  
+  request: |
+    SELECT * FROM (
+        SELECT s.username, s.machine, s.event, (SYSDATE - t.start_date) * 24 * 60 * 60 second
+        FROM v$transaction t, v$session s
+        WHERE t.ses_addr = s.saddr AND username IS NOT NULL AND username NOT IN ('SYS')
+    ) WHERE second >= 1
+- name: asm-space
+  context: asm
+  labels:
+    - disk_group
+  metricsdesc:
+    total_mb: total_mb
+    free_mb: free_mb
+  request: |
+    SELECT name disk_group, total_mb, free_mb FROM v$asm_diskgroup 

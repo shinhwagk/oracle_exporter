@@ -40,6 +40,10 @@ var (
 		"mdb.addr",
 		"multidatabase address",
 	).Default("").String()
+	oracleUserpass = kingpin.Flag(
+		"oracle.userpass", 
+		"set oracle username & password"
+		).Required().String()
 )
 
 // Metric name parts.

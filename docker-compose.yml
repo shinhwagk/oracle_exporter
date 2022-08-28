@@ -1,0 +1,145 @@
+version: "3.4"
+
+x-log: &log
+  logging:
+    options:
+      max-size: "1m"
+services:
+  #  elastic:
+  #    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+  #    environment:
+  #      TZ: Asia/Shanghai
+  #      discovery.type: single-node
+  #      ES_JAVA_OPTS: -Xms4g -Xmx4g
+  #    volumes:
+  #      - elasticsearch-data:/usr/share/elasticsearch/data
+  #    ulimits:
+  #      memlock:
+  #        soft: -1
+  #        hard: -1
+  #    ports:
+  #      - 9200:9200
+  #      - 9300:9300
+  #    deploy:
+  #      resources:
+  #         limits:
+  #            memory: 5G
+  #         reservations:
+  #            memory: 4G
+  #  scrapy_xplan:
+  #    image: shinhwagk/scrape-xplan:0.0.26
+  #    environment:
+  #      TZ: Asia/Shanghai
+  #      CONSUL_ADDR: consul:8500
+  #      CONSUL_SERVICE: oracle_instances
+  #      ELASTICSEARCH_URL: http://elastic:9200
+  #      EXCLUDE_USERS: grafanauser,sys,system
+  #      MULTIDATABASE_ADDR: multidatabase-oracle:8000
+  #      EXCLUDE_LABELS: db_sn,db_port,db_ip
+  #      EXCLUDE_DBS: ''
+  # EXCLUDE_DBS: z35,h34
+  #    command: sh -c "while true; do python main.py; sleep 20; done"
+  grafan-sqlview:
+    image: shinhwagk/prom-oracle-sqlview:0.0.6
+    restart: "on-failure"
+    environment:
+      ELASTICSEARCH_URL: http://elastic:9200
+    ports:
+      - 8081:8080
+  multidatabase-oracle:
+    <<: *log
+    image: shinhwagk/multidatabase:v0.2.11
+    restart: "on-failure"
+    deploy:
+      replicas: 6
+    environment:
+      EXECUTE_TIMEOUT: 60000
+      ORACLE_USERPASS: grafanauser:IWusIm3rYPJCFa
+  consul:
+    <<: *log
+    image: consul:1.10.0
+    ports:
+      - "8500:8500"
+    command:
+      - "agent"
+      - "-dev"
+      - "-client"
+      - "0.0.0.0"
+      - "-ui-content-path"
+      - "/apps/consul/ui/"
+  prometheus:
+    <<: *log
+    image: prom/prometheus:v2.28.1
+    restart: "on-failure"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.external-url=http://localhost:9090/apps/prometheus/"
+      - "--storage.tsdb.retention.time=1d"
+      - "--web.enable-lifecycle"
+      - "--storage.tsdb.max-block-duration=2h"
+      - "--storage.tsdb.min-block-duration=2h"
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+        reservations:
+          memory: 4G
+    ports:
+      - 9090:9090
+    volumes:
+      - prometheus-config:/etc/prometheus
+      - prometheus-data:/prometheus
+  oracle_exporter_11g:
+    <<: *log
+    image: shinhwagk/oracle_exporter:v1.3.8-mdb
+    command:
+      - "--file.metrics=http://gitlab.wexfin.com/oradba/prom-oracle/raw/master/metrics-11g.yaml"
+      - "--mdb.addr=multidatabase-oracle:5000"
+    deploy:
+      replicas: 2
+  oracle_exporter_10g:
+    <<: *log
+    image: shinhwagk/oracle_exporter:v1.2.0-mdb-test3
+    command:
+      - "--file.metrics=http://gitlab.wexfin.com/oradba/prom-oracle/raw/master/metrics-10g.yaml"
+      - "--query.addr=multidatabase-oracle:8000"
+  alertmanager:
+    <<: *log
+    image: prom/alertmanager:v0.22.2
+    ports:
+      - 9093:9093
+    command:
+      - "--web.external-url=http://localhost:9093/apps/alertmanager/"
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - alertmanager-config:/etc/alertmanager
+  alertmanager-dashboard:
+    <<: *log
+    image: ghcr.io/prymitive/karma:v0.87
+    ports:
+      - 9099:8080
+    environment:
+      - "ALERTMANAGER_URI=http://alertmanager:9093/apps/alertmanager"
+      - "TZ=Asia/Shanghai"
+  dingding-webhook:
+    <<: *log
+    image: shinhwagk/alertmanager-webhook-dingding:0.0.5
+    restart: "on-failure"
+    environment:
+      - APP_ARGS_TOKEN=
+      - APP_ARGS_SECRET=
+volumes:
+  prometheus-config:
+    external: true
+  prometheus-data:
+    external: true
+  elasticsearch-data:
+    external: true
+  grafana-config:
+    external: true
+  grafana-mysql-storage:
+    external: true
+  alertmanager-config:
+    external: true
