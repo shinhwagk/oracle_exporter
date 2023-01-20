@@ -1,5 +1,5 @@
 repository:
-    path: github.com/prometheus/oracle_exporter
+    path: github.com/shinhwagk/oracle_exporter
 build:
     binaries:
         - name: oracle_exporter
