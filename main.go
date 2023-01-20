@@ -8,26 +8,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
+
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
-	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
-	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
+	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	webConfig = webflag.AddFlags(kingpin.CommandLine)
 	// queryTimeout      = kingpin.Flag("query.timeout", "Query timeout (in seconds). (env: QUERY_TIMEOUT)").Default(getEnv("QUERY_TIMEOUT", "5")).String()
-	listenAddress = kingpin.Flag(
-		"web.listen-address",
-		"Address on which to expose metrics and web interface.",
-	).Default(":9521").String()
 	metricPath = kingpin.Flag(
 		"web.telemetry-path",
 		"Path under which to expose metrics.",
@@ -40,6 +36,7 @@ var (
 		"mdb.addr",
 		"multidatabase address",
 	).Default("").String()
+	toolkitFlags = kingpinflag.AddFlags(kingpin.CommandLine, ":9521")
 )
 
 // Metric name parts.
@@ -322,10 +319,8 @@ func main() {
 		w.WriteHeader(200)
 	})
 
-	level.Info(logger).Log("msg", "Listening on", "address", *listenAddress)
-
-	server := &http.Server{Addr: *listenAddress}
-	if err := web.ListenAndServe(server, *webConfig, logger); err != nil {
+	server := &http.Server{}
+	if err := web.ListenAndServe(server, toolkitFlags, logger); err != nil {
 		level.Error(logger).Log("err", err)
 		os.Exit(1)
 	}
