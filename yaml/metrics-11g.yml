@@ -1,9 +1,9 @@
 - name: newlog
   contxt: newlog
   metricsdesc:
-    cnt: new log count
+    new_log_cnt: new log count
   request: |
-    select count(*) from v$log where STATUS='INACTIVE'
+    select count(*) new_log_cnt from v$log where STATUS='INACTIVE'
 - name: datafile
   context: datafile
   labels:
