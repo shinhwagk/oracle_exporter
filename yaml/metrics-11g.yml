@@ -1,3 +1,9 @@
+- name: newlog
+  contxt: newlog
+  metricsdesc:
+    cnt: new log count
+  request: |
+    select count(*) from v$log where STATUS='INACTIVE'
 - name: datafile
   context: datafile
   labels:
