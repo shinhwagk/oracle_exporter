@@ -1,34 +1,3 @@
-### dashboard
-![demo.jpg](./images/demo.jpg)
-
-### Usage
-docker-compose.yml
-```yaml
-version: "3"
-
-services:
-  multidatabase-query:
-    image: shinhwagk/multidatabase:v0.2.11
-    restart: always
-    deploy:
-      replicas: 2
-    environment:
-      EXECUTE_TIMEOUT: 60000
-      ORACLE_USERPASS: oracle_exporter:oracle_exporter
-  oracle_exporter_11g:
-    image: docker.io/shinhwagk/oracle_exporter:v1.3.9-mdb
-    restart: always
-    ports:
-      - 9521:9521
-    command:
-      - "--file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/metrics-11g.yml"
-      - "--mdb.addr=multidatabase-query:5000"
-    depends_on:
-      - multidatabase-query
-```
-
-prometheus.yml
-```yaml
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -77,5 +46,3 @@ scrape_configs:
         labels:
           db_server: db-1
           db_dsn: "1.1.1.1:1521/servicename"
-
-```
