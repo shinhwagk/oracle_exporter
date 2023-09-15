@@ -1,9 +1,27 @@
 ### Usage
-```sh
-curl -g 'http://127.0.0.1:9521/metrics?collect[]=sql&dsn=10.65.193.14:1521/func1'
-go env -w GO111MODULE=on
-go env -w GOPROXY=https://goproxy.cn,direct
-go run main.go mdb.go mp.go --mdb.addr=mdb:5000 --file.metrics http://gitlab.wexfin.com/oradba/prom-oracle/raw/master/metrics-11g.yaml
+```yaml
+version: "3"
+
+services:
+  multidatabase-query:
+    image: shinhwagk/multidatabase:v0.2.11
+    restart: always
+    deploy:
+      replicas: 2
+    environment:
+      EXECUTE_TIMEOUT: 60000
+      ORACLE_USERPASS: oracle_exporter:oracle_exporter
+  oracle_exporter_11g:
+    image: docker.io/shinhwagk/oracle_exporter:v1.3.9-mdb
+    restart: always
+    ports:
+      - 9521:9521
+    command:
+      - "--file.metrics=https://raw.githubusercontent.com/shinhwagk/oracle_exporter/mdb/yaml/metrics-11g.yml"
+      - "--mdb.addr=multidatabase-query:5000"
+    depends_on:
+      - multidatabase-query
+
 ```
 
 ### dashboard
